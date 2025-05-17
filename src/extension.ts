@@ -5,8 +5,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { normalizeHexColor, getContrastColor, adjustColor, isDarkTheme } from './utils/colorUtils';
+import { initializeOpenAIClient, getOpenAIClient } from './services/openaiService';
 
-// Store OpenAI client instance
+// Reference to the OpenAI client instance
 let openai: OpenAI | undefined;
 
 // Interface for theme data
@@ -26,37 +27,6 @@ interface ThemeData {
 // Store the last generated theme
 let lastGeneratedTheme: ThemeData | undefined;
 
-/**
- * Initializes the OpenAI client with the API key
- * @param context The extension context used to access secrets storage
- * @returns A boolean indicating whether initialization was successful
- */
-async function initializeOpenAIClient(context: vscode.ExtensionContext): Promise<boolean> {
-    // Get OpenAI API key
-    let apiKey = await context.secrets.get('openaiApiKey');
-    
-    if (!apiKey) {
-        apiKey = await vscode.window.showInputBox({
-            prompt: 'Enter your OpenAI API Key',
-            ignoreFocusOut: true, // Keep input box open even if focus moves
-            password: true, // Mask the input
-        });
-        
-        if (apiKey) {
-            await context.secrets.store('openaiApiKey', apiKey);
-            vscode.window.showInformationMessage('OpenAI API Key stored successfully!');
-            openai = new OpenAI({ apiKey });
-            return true;
-        } else {
-            vscode.window.showErrorMessage('OpenAI API Key is required for this extension to work.');
-            return false; // No key provided
-        }
-    } else {
-        openai = new OpenAI({ apiKey });
-        return true;
-    }
-}
-
 export async function activate(context: vscode.ExtensionContext) {
     // Load prompt templates from text files
     // Use extensionUri.fsPath to locate prompts in src/prompts at runtime
@@ -71,6 +41,9 @@ export async function activate(context: vscode.ExtensionContext) {
     if (!initialized) {
         return; // Deactivate if no key is provided
     }
+    
+    // Get the initialized OpenAI client
+    openai = getOpenAIClient();
 
     // Register command to change theme based on natural language description
     let changeThemeCommand = vscode.commands.registerCommand('dynamicThemeChanger.changeTheme', async () => {
@@ -81,6 +54,8 @@ export async function activate(context: vscode.ExtensionContext) {
             if (!initialized) {
                 return; // Exit if initialization failed
             }
+            // Get the initialized OpenAI client
+            openai = getOpenAIClient();
         }
 
         const themeDescription = await vscode.window.showInputBox({
