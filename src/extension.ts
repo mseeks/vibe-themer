@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import OpenAI from 'openai';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 
 // Store OpenAI client instance
 let openai: OpenAI | undefined;
@@ -183,6 +184,50 @@ export async function activate(context: vscode.ExtensionContext) {
 							"activityBarBadge.background": accent,
 							"activityBarBadge.foreground": getContrastColor(accent),
 							
+							// Input fields
+							"input.background": adjustColor(background, 0.95),
+							"input.foreground": foreground,
+							"input.border": secondary,
+							"inputOption.activeBorder": accent,
+							"inputValidation.errorBackground": "#ff000033",
+							"inputValidation.errorBorder": "#ff0000",
+							
+							// Terminal
+							"terminal.background": background,
+							"terminal.foreground": foreground,
+							"terminalCursor.background": background,
+							"terminalCursor.foreground": accent,
+							"terminal.ansiBlack": adjustColor(background, 0.5),
+							"terminal.ansiBlue": accent,
+							"terminal.ansiCyan": adjustColor(accent, 1.2),
+							"terminal.ansiGreen": adjustColor(secondary, 1.3),
+							"terminal.ansiMagenta": adjustColor(primary, 1.2),
+							"terminal.ansiRed": "#ff6347",
+							"terminal.ansiYellow": "#ffd700",
+							"terminal.ansiWhite": foreground,
+							"terminal.ansiBrightBlack": adjustColor(background, 0.7),
+							"terminal.ansiBrightBlue": adjustColor(accent, 1.3),
+							"terminal.ansiBrightCyan": adjustColor(accent, 1.4),
+							"terminal.ansiBrightGreen": adjustColor(secondary, 1.5),
+							"terminal.ansiBrightMagenta": adjustColor(primary, 1.4),
+							"terminal.ansiBrightRed": "#ff7f50",
+							"terminal.ansiBrightYellow": "#ffd700",
+							"terminal.ansiBrightWhite": "#ffffff",
+							
+							// Lists and trees
+							"list.activeSelectionBackground": primary,
+							"list.activeSelectionForeground": getContrastColor(primary),
+							"list.hoverBackground": adjustColor(background, 0.95),
+							"list.hoverForeground": foreground,
+							"list.inactiveSelectionBackground": adjustColor(primary, 0.7),
+							"list.inactiveSelectionForeground": getContrastColor(adjustColor(primary, 0.7)),
+							"list.highlightForeground": accent,
+							
+							// Buttons
+							"button.background": accent,
+							"button.foreground": getContrastColor(accent),
+							"button.hoverBackground": adjustColor(accent, 1.1),
+							
 							// Title Bar
 							"titleBar.activeBackground": primary,
 							"titleBar.activeForeground": getContrastColor(primary),
@@ -201,9 +246,16 @@ export async function activate(context: vscode.ExtensionContext) {
 							"editor.background": background,
 							"editor.foreground": foreground,
 							"editorLineNumber.foreground": adjustColor(foreground, 0.5),
+							"editorLineNumber.activeForeground": foreground, // Active line number highlighting
 							"editorCursor.foreground": accent,
 							"editor.selectionBackground": adjustColor(accent, 0.3),
 							"editor.selectionHighlightBackground": adjustColor(accent, 0.15),
+							"editor.lineHighlightBackground": adjustColor(background, background === "#ffffff" ? 0.95 : 1.1), // Line highlight
+							"editor.lineHighlightBorder": "transparent",
+							"editorGutter.background": adjustColor(background, 0.98), // Gutter background
+							"editorGutter.modifiedBackground": adjustColor(accent, 0.8),
+							"editorGutter.addedBackground": adjustColor(secondary, 1.3),
+							"editorGutter.deletedBackground": "#ff6347",
 							"editorSuggestWidget.background": background,
 							"editorSuggestWidget.foreground": foreground,
 							"editorSuggestWidget.highlightForeground": accent,
@@ -324,20 +376,80 @@ export async function activate(context: vscode.ExtensionContext) {
 				: vscode.ConfigurationTarget.Global;
 			
 			try {
-				// Empty object to clear all color customizations
-				await config.update('workbench.colorCustomizations', {}, configTarget);
+				console.log('Resetting theme customizations at target:', configTarget === vscode.ConfigurationTarget.Workspace ? 'Workspace' : 'Global');
 				
-				// Also reset token color customizations
-				await config.update('editor.tokenColorCustomizations', {}, configTarget);
+				// First check if there are any customizations to clear
+				const currentColorCustomizations = config.get('workbench.colorCustomizations');
+				const currentTokenColorCustomizations = config.get('editor.tokenColorCustomizations');
+				
+				console.log('Current color customizations:', currentColorCustomizations);
+				console.log('Current token color customizations:', currentTokenColorCustomizations);
+				
+				// Reset both workbench and token color customizations
+				await Promise.all([
+					config.update('workbench.colorCustomizations', undefined, configTarget),
+					config.update('editor.tokenColorCustomizations', undefined, configTarget)
+				]);
+				
+				// Try both ways - with empty object and with undefined
+				if (Object.keys(config.get('workbench.colorCustomizations') || {}).length > 0) {
+					await config.update('workbench.colorCustomizations', {}, configTarget);
+				}
+				
+				if (Object.keys(config.get('editor.tokenColorCustomizations') || {}).length > 0) {
+					await config.update('editor.tokenColorCustomizations', {}, configTarget);
+				}
 				
 				// Clear the last generated theme
 				lastGeneratedTheme = undefined;
 				
+				// Also try to reset at the other level just to be sure
+				const otherTarget = configTarget === vscode.ConfigurationTarget.Workspace 
+					? vscode.ConfigurationTarget.Global 
+					: vscode.ConfigurationTarget.Workspace;
+				
+				try {
+					await Promise.all([
+						config.update('workbench.colorCustomizations', undefined, otherTarget),
+						config.update('editor.tokenColorCustomizations', undefined, otherTarget)
+					]);
+				} catch (otherError) {
+					// Ignore errors when trying to reset the other target
+					console.log('Note: Could not reset at other target level (expected if no workspace)');
+				}
+				
+				// Verify customizations are cleared
+				const verifyColorCustomizations = config.get('workbench.colorCustomizations');
+				const verifyTokenCustomizations = config.get('editor.tokenColorCustomizations');
+				
+				console.log('Verified color customizations after reset:', verifyColorCustomizations);
+				console.log('Verified token color customizations after reset:', verifyTokenCustomizations);
+				
+				// Force a theme reload by temporarily changing the theme and changing back
+				const currentTheme = config.get('workbench.colorTheme');
+				const tempTheme = currentTheme === 'Default Dark+' ? 'Default Light+' : 'Default Dark+';
+				
+				try {
+					// Quick toggle of theme to force refresh
+					await config.update('workbench.colorTheme', tempTheme, vscode.ConfigurationTarget.Global);
+					setTimeout(async () => {
+						await config.update('workbench.colorTheme', currentTheme, vscode.ConfigurationTarget.Global);
+					}, 300);
+				} catch (themeError) {
+					console.log('Theme toggle failed (non-critical):', themeError);
+				}
+				
 				vscode.window.showInformationMessage('All theme customizations cleared. Your selected theme should now display correctly.');
 			} catch (error) {
+				console.error('Error during primary reset:', error);
+				
 				// If updating workspace settings fails, try user settings
 				if (configTarget === vscode.ConfigurationTarget.Workspace) {
 					try {
+						await config.update('workbench.colorCustomizations', undefined, vscode.ConfigurationTarget.Global);
+						await config.update('editor.tokenColorCustomizations', undefined, vscode.ConfigurationTarget.Global);
+						
+						// Try with empty object as well
 						await config.update('workbench.colorCustomizations', {}, vscode.ConfigurationTarget.Global);
 						await config.update('editor.tokenColorCustomizations', {}, vscode.ConfigurationTarget.Global);
 						
@@ -358,6 +470,210 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	});
 	context.subscriptions.push(resetThemeCommand);
+	
+	// Command to export the current theme as a VS Code theme file
+	let exportThemeCommand = vscode.commands.registerCommand('dynamicThemeChanger.exportTheme', async () => {
+		try {
+			if (!lastGeneratedTheme) {
+				vscode.window.showErrorMessage('No theme has been generated yet. Please create a theme first.');
+				return;
+			}
+			
+			// Ask the user for a theme name
+			const themeName = await vscode.window.showInputBox({
+				prompt: 'Enter a name for your theme',
+				placeHolder: lastGeneratedTheme?.name || 'My Custom Theme',
+				value: lastGeneratedTheme?.name || 'My Custom Theme'
+			});
+			
+			if (!themeName) {
+				vscode.window.showInformationMessage('Theme export cancelled.');
+				return;
+			}
+			
+			await vscode.window.withProgress({
+				location: vscode.ProgressLocation.Notification,
+				title: "Exporting theme...",
+				cancellable: false
+			}, async () => {
+				const { colors } = lastGeneratedTheme!;
+				
+				// Create theme JSON structure
+				const themeData = {
+					"name": themeName,
+					"type": isDarkTheme(colors.background) ? "dark" : "light",
+					"colors": {
+						// Workbench colors
+						"activityBar.background": colors.primary,
+						"activityBar.foreground": getContrastColor(colors.primary),
+						"activityBar.activeBorder": colors.accent,
+						"activityBar.activeBackground": colors.primary,
+						"activityBar.inactiveForeground": getContrastColor(colors.primary, 0.6),
+						"activityBarBadge.background": colors.accent,
+						"activityBarBadge.foreground": getContrastColor(colors.accent),
+						
+						// Input fields
+						"input.background": adjustColor(colors.background, 0.95),
+						"input.foreground": colors.foreground,
+						"input.border": colors.secondary,
+						"inputOption.activeBorder": colors.accent,
+						
+						// Terminal
+						"terminal.background": colors.background,
+						"terminal.foreground": colors.foreground,
+						"terminalCursor.background": colors.background,
+						"terminalCursor.foreground": colors.accent,
+						
+						// Lists and trees
+						"list.activeSelectionBackground": colors.primary,
+						"list.activeSelectionForeground": getContrastColor(colors.primary),
+						"list.hoverBackground": adjustColor(colors.background, 0.95),
+						"list.hoverForeground": colors.foreground,
+						"list.inactiveSelectionBackground": adjustColor(colors.primary, 0.7),
+						"list.inactiveSelectionForeground": getContrastColor(adjustColor(colors.primary, 0.7)),
+						"list.highlightForeground": colors.accent,
+						
+						// Buttons
+						"button.background": colors.accent,
+						"button.foreground": getContrastColor(colors.accent),
+						"button.hoverBackground": adjustColor(colors.accent, 1.1),
+						
+						// Title Bar
+						"titleBar.activeBackground": colors.primary,
+						"titleBar.activeForeground": getContrastColor(colors.primary),
+						"titleBar.inactiveBackground": colors.secondary,
+						"titleBar.inactiveForeground": getContrastColor(colors.secondary),
+						
+						// Status Bar
+						"statusBar.background": colors.secondary,
+						"statusBar.foreground": getContrastColor(colors.secondary),
+						"statusBar.noFolderBackground": colors.accent,
+						"statusBar.noFolderForeground": getContrastColor(colors.accent),
+						"statusBarItem.prominentBackground": colors.accent,
+						"statusBarItem.prominentHoverBackground": colors.accent,
+						
+						// Editor
+						"editor.background": colors.background,
+						"editor.foreground": colors.foreground,
+						"editorLineNumber.foreground": adjustColor(colors.foreground, 0.5),
+						"editorLineNumber.activeForeground": colors.foreground, // Active line number highlighting
+						"editorCursor.foreground": colors.accent,
+						"editor.selectionBackground": adjustColor(colors.accent, 0.3),
+						"editor.selectionHighlightBackground": adjustColor(colors.accent, 0.15),
+						"editor.lineHighlightBackground": adjustColor(colors.background, colors.background === "#ffffff" ? 0.95 : 1.1), // Line highlight
+						"editor.lineHighlightBorder": "transparent",
+						"editorGutter.background": adjustColor(colors.background, 0.98), // Gutter background
+						"editorGutter.modifiedBackground": adjustColor(colors.accent, 0.8),
+						"editorGutter.addedBackground": adjustColor(colors.secondary, 1.3),
+						"editorGutter.deletedBackground": "#ff6347",
+						"editorSuggestWidget.background": colors.background,
+						"editorSuggestWidget.foreground": colors.foreground,
+						"editorSuggestWidget.highlightForeground": colors.accent,
+						"editorSuggestWidget.selectedBackground": adjustColor(colors.accent, 0.2),
+						
+						// Editor Tabs and Groups
+						"editorGroupHeader.tabsBackground": adjustColor(colors.background, 0.9),
+						"tab.activeBackground": colors.background,
+						"tab.activeForeground": colors.accent,
+						"tab.activeBorderTop": colors.accent,
+						"tab.inactiveBackground": adjustColor(colors.background, 0.8),
+						"tab.inactiveForeground": adjustColor(colors.foreground, 0.6),
+						
+						// Sidebar
+						"sideBar.background": colors.background,
+						"sideBar.foreground": colors.foreground,
+						"sideBar.border": colors.secondary,
+						"sideBarTitle.foreground": colors.accent,
+						"sideBarSectionHeader.background": adjustColor(colors.background, 0.9),
+						"sideBarSectionHeader.foreground": colors.accent,
+						
+						// Breadcrumbs
+						"breadcrumb.foreground": colors.foreground,
+						"breadcrumb.focusForeground": colors.accent,
+						"breadcrumb.activeSelectionForeground": colors.accent,
+						
+						// Scrollbar
+						"scrollbarSlider.background": adjustColor(colors.primary, 0.3),
+						"scrollbarSlider.hoverBackground": adjustColor(colors.primary, 0.4),
+						"scrollbarSlider.activeBackground": adjustColor(colors.primary, 0.6),
+						
+						// Panel
+						"panel.background": colors.background,
+						"panel.border": colors.secondary,
+						"panelTitle.activeForeground": colors.accent,
+						"panelTitle.inactiveForeground": adjustColor(colors.foreground, 0.6)
+					},
+					"tokenColors": lastGeneratedTheme?.tokenColors || []
+				};
+				
+				// Show save dialog
+				const themeFileName = `${themeName.toLowerCase().replace(/\s+/g, '-')}-theme.json`;
+				
+				// Different approaches based on whether we're in a workspace
+				const saveUri = await vscode.window.showSaveDialog({
+					defaultUri: vscode.workspace.workspaceFolders 
+						? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, themeFileName)
+						: vscode.Uri.file(path.join(process.env.HOME || process.env.USERPROFILE || '', themeFileName)),
+					filters: {
+						'JSON Files': ['json']
+					},
+					saveLabel: 'Export Theme'
+				});
+				
+				if (saveUri) {
+					// Write the file
+					await vscode.workspace.fs.writeFile(
+						saveUri,
+						Buffer.from(JSON.stringify(themeData, null, 2))
+					);
+					
+					// Show success message with instructions
+					vscode.window.showInformationMessage(
+						`Theme exported to ${saveUri.fsPath}. To use this theme as a VS Code extension, you'll need to create a theme extension project.`,
+						'Show Instructions'
+					).then(selection => {
+						if (selection === 'Show Instructions') {
+							const instructionsContent = [
+								'# How to Use Your Exported Theme as a VS Code Extension',
+								'',
+								'1. Create a new VS Code extension project:',
+								'   ```',
+								'   npm install -g yo generator-code',
+								'   mkdir my-theme-extension',
+								'   cd my-theme-extension',
+								'   yo code',
+								'   ```',
+								'   Select "New Color Theme" when prompted',
+								'',
+								'2. Copy your exported theme JSON file to the "themes" folder in your new project',
+								'',
+								'3. Update the package.json file to reference your theme file',
+								'',
+								'4. Package and install your theme extension:',
+								'   ```',
+								'   vsce package',
+								'   code --install-extension my-theme-extension-0.0.1.vsix',
+								'   ```',
+								'',
+								'For more details, see [VS Code Theme Extension Documentation](https://code.visualstudio.com/api/extension-guides/color-theme)'
+							].join('\n');
+							
+							// Create a temporary file with the instructions
+							const tmpFile = path.join(os.tmpdir(), 'theme-instructions.md');
+							fs.writeFileSync(tmpFile, instructionsContent);
+							
+							// Open the instructions file
+							vscode.commands.executeCommand('markdown.showPreview', vscode.Uri.file(tmpFile));
+						}
+					});
+				}
+			});
+		} catch (error: any) {
+			console.error('Theme export error:', error);
+			vscode.window.showErrorMessage(`Failed to export theme: ${error.message}`);
+		}
+	});
+	context.subscriptions.push(exportThemeCommand);
 }
 
 // Helper function to determine a contrasting color (black or white) for text
@@ -407,6 +723,20 @@ function adjustColor(hexcolor: string, factor: number): string {
 	
 	// Convert back to hex
 	return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+// Helper function to determine if a color is dark
+function isDarkTheme(backgroundColor: string): boolean {
+	backgroundColor = backgroundColor.replace("#", "");
+	const r = parseInt(backgroundColor.substring(0, 2), 16);
+	const g = parseInt(backgroundColor.substring(2, 4), 16);
+	const b = parseInt(backgroundColor.substring(4, 6), 16);
+	
+	// Calculate perceived brightness using the formula (0.299*R + 0.587*G + 0.114*B)
+	const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+	
+	// If brightness is less than 128, consider it a dark background
+	return brightness < 128;
 }
 
 export function deactivate() {}

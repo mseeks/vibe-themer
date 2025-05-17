@@ -25,7 +25,8 @@
   "activationEvents": [
     "onCommand:dynamicThemeChanger.changeTheme",
     "onCommand:dynamicThemeChanger.clearApiKey",
-    "onCommand:dynamicThemeChanger.resetTheme"
+    "onCommand:dynamicThemeChanger.resetTheme",
+    "onCommand:dynamicThemeChanger.exportTheme"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -41,6 +42,10 @@
       {
         "command": "dynamicThemeChanger.resetTheme",
         "title": "Reset Theme Customizations"
+      },
+      {
+        "command": "dynamicThemeChanger.exportTheme",
+        "title": "Export Current Theme"
       }
     ]
   },

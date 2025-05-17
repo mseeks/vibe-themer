@@ -9,7 +9,7 @@ This extension leverages the power of OpenAI's language models to generate custo
 Key features include:
 
 - **Natural language theme generation**: Describe the theme you want in plain English
-- **Comprehensive theme application**: Updates multiple UI elements including activity bar, title bar, status bar, editor, and sidebar
+- **Comprehensive theme application**: Updates multiple UI elements including activity bar, title bar, status bar, editor, sidebar, input fields, terminals, lists/trees, and buttons
 - **Secure API key storage**: Your OpenAI API key is stored securely in VS Code's secret storage
 - **Easy key management**: Commands to store and clear your API key
 
@@ -33,6 +33,7 @@ This extension contributes the following commands:
 * `dynamicThemeChanger.changeTheme`: Prompts for a theme description and changes your theme
 * `dynamicThemeChanger.clearApiKey`: Clears your stored OpenAI API key
 * `dynamicThemeChanger.resetTheme`: Resets all theme customizations to restore default theme behavior
+* `dynamicThemeChanger.exportTheme`: Exports the current theme as a JSON file that can be used in a VS Code theme extension
 
 ## How It Works
 
