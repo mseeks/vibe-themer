@@ -26,6 +26,37 @@ interface ThemeData {
 // Store the last generated theme
 let lastGeneratedTheme: ThemeData | undefined;
 
+/**
+ * Initializes the OpenAI client with the API key
+ * @param context The extension context used to access secrets storage
+ * @returns A boolean indicating whether initialization was successful
+ */
+async function initializeOpenAIClient(context: vscode.ExtensionContext): Promise<boolean> {
+    // Get OpenAI API key
+    let apiKey = await context.secrets.get('openaiApiKey');
+    
+    if (!apiKey) {
+        apiKey = await vscode.window.showInputBox({
+            prompt: 'Enter your OpenAI API Key',
+            ignoreFocusOut: true, // Keep input box open even if focus moves
+            password: true, // Mask the input
+        });
+        
+        if (apiKey) {
+            await context.secrets.store('openaiApiKey', apiKey);
+            vscode.window.showInformationMessage('OpenAI API Key stored successfully!');
+            openai = new OpenAI({ apiKey });
+            return true;
+        } else {
+            vscode.window.showErrorMessage('OpenAI API Key is required for this extension to work.');
+            return false; // No key provided
+        }
+    } else {
+        openai = new OpenAI({ apiKey });
+        return true;
+    }
+}
+
 export async function activate(context: vscode.ExtensionContext) {
     // Load prompt templates from text files
     // Use extensionUri.fsPath to locate prompts in src/prompts at runtime
@@ -35,24 +66,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
     console.log('Congratulations, your extension "dynamic-theme-changer" is now active!');
 
-    // Get OpenAI API key on activation
-    let apiKey = await context.secrets.get('openaiApiKey');
-    if (!apiKey) {
-        apiKey = await vscode.window.showInputBox({
-            prompt: 'Enter your OpenAI API Key',
-            ignoreFocusOut: true, // Keep input box open even if focus moves
-            password: true, // Mask the input
-        });
-        if (apiKey) {
-            await context.secrets.store('openaiApiKey', apiKey);
-            vscode.window.showInformationMessage('OpenAI API Key stored successfully!');
-            openai = new OpenAI({ apiKey });
-        } else {
-            vscode.window.showErrorMessage('OpenAI API Key is required for this extension to work.');
-            return; // Deactivate if no key is provided
-        }
-    } else {
-        openai = new OpenAI({ apiKey });
+    // Initialize OpenAI client
+    const initialized = await initializeOpenAIClient(context);
+    if (!initialized) {
+        return; // Deactivate if no key is provided
     }
 
     // Register command to change theme based on natural language description
@@ -60,23 +77,9 @@ export async function activate(context: vscode.ExtensionContext) {
         if (!openai) {
             vscode.window.showErrorMessage('OpenAI client not initialized. Please ensure API key is set.');
             // Attempt to re-initialize or prompt for key again
-            apiKey = await context.secrets.get('openaiApiKey');
-            if (!apiKey) {
-                apiKey = await vscode.window.showInputBox({
-                    prompt: 'Enter your OpenAI API Key',
-                    ignoreFocusOut: true,
-                    password: true,
-                });
-                if (apiKey) {
-                    await context.secrets.store('openaiApiKey', apiKey);
-                    openai = new OpenAI({ apiKey });
-                    vscode.window.showInformationMessage('OpenAI API Key stored.');
-                } else {
-                    vscode.window.showErrorMessage('OpenAI API Key is required.');
-                    return;
-                }
-            } else {
-                openai = new OpenAI({ apiKey });
+            const initialized = await initializeOpenAIClient(context);
+            if (!initialized) {
+                return; // Exit if initialization failed
             }
         }
 
