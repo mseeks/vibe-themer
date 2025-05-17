@@ -7,6 +7,7 @@ import * as os from 'os';
 import { normalizeHexColor, getContrastColor, adjustColor, isDarkTheme } from './utils/colorUtils';
 import { initializeOpenAIClient, getOpenAIClient } from './services/openaiService';
 import { loadPromptTemplates, PromptTemplates } from './services/promptService';
+import { registerClearApiKeyCommand } from './commands/clearApiKeyCommand';
 
 // Reference to the OpenAI client instance
 let openai: OpenAI | undefined;
@@ -606,13 +607,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(changeThemeCommand);
 
-	// Command to clear API key
-	let clearApiKeyCommand = vscode.commands.registerCommand('dynamicThemeChanger.clearApiKey', async () => {
-		await context.secrets.delete('openaiApiKey');
-		openai = undefined; // Clear the OpenAI client instance
-		vscode.window.showInformationMessage('OpenAI API Key cleared. You will be prompted for it again on next use.');
-	});
-	context.subscriptions.push(clearApiKeyCommand);
+	// Register command to clear API key (refactored)
+	registerClearApiKeyCommand(context, { current: openai });
 	
 	// Command to reset theme customizations
 	let resetThemeCommand = vscode.commands.registerCommand('dynamicThemeChanger.resetTheme', async () => {
