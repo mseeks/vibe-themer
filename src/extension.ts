@@ -26,93 +26,94 @@ interface ThemeData {
 let lastGeneratedTheme: ThemeData | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
-	console.log('Congratulations, your extension "dynamic-theme-changer" is now active!');
+    // Load prompt templates from text files
+    // Use extensionUri.fsPath to locate prompts in src/prompts at runtime
+    const promptsDir = path.join(context.extensionUri.fsPath, 'src', 'prompts');
+    const baseColorsPrompt = fs.readFileSync(path.join(promptsDir, 'baseColorsPrompt.txt'), 'utf8');
+    const tokenColorsPrompt = fs.readFileSync(path.join(promptsDir, 'tokenColorsPrompt.txt'), 'utf8');
 
-	// Get OpenAI API key on activation
-	let apiKey = await context.secrets.get('openaiApiKey');
-	if (!apiKey) {
-		apiKey = await vscode.window.showInputBox({
-			prompt: 'Enter your OpenAI API Key',
-			ignoreFocusOut: true, // Keep input box open even if focus moves
-			password: true, // Mask the input
-		});
-		if (apiKey) {
-			await context.secrets.store('openaiApiKey', apiKey);
-			vscode.window.showInformationMessage('OpenAI API Key stored successfully!');
-			openai = new OpenAI({ apiKey });
-		} else {
-			vscode.window.showErrorMessage('OpenAI API Key is required for this extension to work.');
-			return; // Deactivate if no key is provided
-		}
-	} else {
-		openai = new OpenAI({ apiKey });
-	}
+    console.log('Congratulations, your extension "dynamic-theme-changer" is now active!');
 
-	// Register command to change theme based on natural language description
-	let changeThemeCommand = vscode.commands.registerCommand('dynamicThemeChanger.changeTheme', async () => {
-		if (!openai) {
-			vscode.window.showErrorMessage('OpenAI client not initialized. Please ensure API key is set.');
-			// Attempt to re-initialize or prompt for key again
-			apiKey = await context.secrets.get('openaiApiKey');
-			if (!apiKey) {
-				apiKey = await vscode.window.showInputBox({
-					prompt: 'Enter your OpenAI API Key',
-					ignoreFocusOut: true,
-					password: true,
-				});
-				if (apiKey) {
-					await context.secrets.store('openaiApiKey', apiKey);
-					openai = new OpenAI({ apiKey });
-					vscode.window.showInformationMessage('OpenAI API Key stored.');
-				} else {
-					vscode.window.showErrorMessage('OpenAI API Key is required.');
-					return;
-				}
-			} else {
-				openai = new OpenAI({ apiKey });
-			}
-		}
+    // Get OpenAI API key on activation
+    let apiKey = await context.secrets.get('openaiApiKey');
+    if (!apiKey) {
+        apiKey = await vscode.window.showInputBox({
+            prompt: 'Enter your OpenAI API Key',
+            ignoreFocusOut: true, // Keep input box open even if focus moves
+            password: true, // Mask the input
+        });
+        if (apiKey) {
+            await context.secrets.store('openaiApiKey', apiKey);
+            vscode.window.showInformationMessage('OpenAI API Key stored successfully!');
+            openai = new OpenAI({ apiKey });
+        } else {
+            vscode.window.showErrorMessage('OpenAI API Key is required for this extension to work.');
+            return; // Deactivate if no key is provided
+        }
+    } else {
+        openai = new OpenAI({ apiKey });
+    }
 
-		const themeDescription = await vscode.window.showInputBox({
-			prompt: 'Describe the theme you want (e.g., "warm and cozy", "futuristic dark blue")',
-			placeHolder: 'e.g., "ocean vibes"'
-		});
+    // Register command to change theme based on natural language description
+    let changeThemeCommand = vscode.commands.registerCommand('dynamicThemeChanger.changeTheme', async () => {
+        if (!openai) {
+            vscode.window.showErrorMessage('OpenAI client not initialized. Please ensure API key is set.');
+            // Attempt to re-initialize or prompt for key again
+            apiKey = await context.secrets.get('openaiApiKey');
+            if (!apiKey) {
+                apiKey = await vscode.window.showInputBox({
+                    prompt: 'Enter your OpenAI API Key',
+                    ignoreFocusOut: true,
+                    password: true,
+                });
+                if (apiKey) {
+                    await context.secrets.store('openaiApiKey', apiKey);
+                    openai = new OpenAI({ apiKey });
+                    vscode.window.showInformationMessage('OpenAI API Key stored.');
+                } else {
+                    vscode.window.showErrorMessage('OpenAI API Key is required.');
+                    return;
+                }
+            } else {
+                openai = new OpenAI({ apiKey });
+            }
+        }
 
-		if (!themeDescription) {
-			vscode.window.showInformationMessage('No theme description provided.');
-			return;
-		}
+        const themeDescription = await vscode.window.showInputBox({
+            prompt: 'Describe the theme you want (e.g., "warm and cozy", "futuristic dark blue")',
+            placeHolder: 'e.g., "ocean vibes"'
+        });
 
-		try {
-			await vscode.window.withProgress({
-				location: vscode.ProgressLocation.Notification,
-				title: "Generating theme colors...",
-				cancellable: false
-			}, async (progress) => {
-				try {
-					progress.report({ message: "Generating base colors..." });
-					
-					// First create base colors
-					const completion = await openai!.chat.completions.create({
-						model: "o3",
-						messages: [								{ 
-								role: "system", 
-								content: "You are a professional UI/UX color theme designer specializing in code editor themes. Create a cohesive, visually pleasing color palette based on descriptions. \n\nColor usage in the theme:\n- primary: Used for activity bar, title bar, and selection highlights. Should be distinctive but not harsh.\n- secondary: Used for status bar, borders, and inactive elements. Should complement primary.\n- accent: Used for important UI elements, active text, cursor, badges, and buttons. Should provide good visual contrast and draw attention.\n- background: Main background color for editor and UI. Should be easy on the eyes for long coding sessions.\n- foreground: Main text color. Must have excellent contrast with background for readability.\n\nEnsure sufficient contrast between pairs (foreground/background, text/selection highlight). For dark themes, avoid pure black backgrounds. For light themes, avoid pure white backgrounds. Ensure the accent color stands out against both primary and background.\n\nIMPORTANT FORMAT RULES:\n1. Return ONLY a valid JSON object with no explanation or commentary\n2. Use EXACTLY this format: {\"primary\":\"#RRGGBB\",\"secondary\":\"#RRGGBB\",\"accent\":\"#RRGGBB\",\"background\":\"#RRGGBB\",\"foreground\":\"#RRGGBB\"}\n3. All hex colors MUST be lowercase, must include the # prefix, and must use exactly 6 hex digits (not 3)\n4. Examples of valid colors: \"#ff0000\" for red, \"#00ff00\" for green, \"#0000ff\" for blue, \"#ffffff\" for white, \"#000000\" for black\n5. Examples of invalid colors: \"ff0000\" (missing #), \"#fff\" (shorthand), \"#FF0000\" (uppercase), \"rgb(255,0,0)\" (wrong format)\n6. Do not include any rgb(), rgba(), hsl(), or other non-hex color formats\n7. Do not include any additional properties, comments, or explanations in the JSON\n\nDouble-check that:\n- All values follow the exact format \"#rrggbb\" with lowercase letters\n- The JSON is properly formatted with quotes around property names and values\n- The JSON has exactly 5 properties: primary, secondary, accent, background, foreground\n- There are no trailing commas, comments, or other syntax errors\n\nExample of correctly formatted response:\n{\"primary\":\"#3b82f6\",\"secondary\":\"#6b7280\",\"accent\":\"#f97316\",\"background\":\"#1e293b\",\"foreground\":\"#e2e8f0\"}"
-							},
-							{ 
-								role: "user", 
-								content: themeDescription 
-							}
-						],
-						max_completion_tokens: 2000
-					});
+        if (!themeDescription) {
+            vscode.window.showInformationMessage('No theme description provided.');
+            return;
+        }
 
-					const colorResponse = completion.choices[0]?.message?.content?.trim();
-					console.log('Raw color response from OpenAI:', colorResponse);
-					
-					try {
-						// Define ColorPalette type for proper typing
-						interface ColorPalette {
+        try {
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: "Generating theme colors...",
+                cancellable: false
+            }, async (progress) => {
+                try {
+                    progress.report({ message: "Generating base colors..." });
+                    
+                    // First create base colors
+                    const completion = await openai!.chat.completions.create({
+                        model: "o3",
+                        messages: [
+                            { role: "system", content: baseColorsPrompt },
+                            { role: "user", content: themeDescription }
+                        ],
+                        max_completion_tokens: 2000
+                    });
+
+                    const colorResponse = completion.choices[0]?.message?.content?.trim();
+                    console.log('Raw color response from OpenAI:', colorResponse);
+                    
+                    try {
+                        // Define ColorPalette type for proper typing
+                        interface ColorPalette {
 							primary?: string;
 							secondary?: string;
 							accent?: string;
@@ -344,14 +345,8 @@ export async function activate(context: vscode.ExtensionContext) {
 						const tokenCompletion = await openai!.chat.completions.create({
 							model: "o3",
 							messages: [
-								{ 
-									role: "system", 
-									content: "You are a code editor theme designer. Create syntax highlighting colors for programming languages based on a color palette. Return JSON with token types and their colors. Include common scopes like 'comment', 'string', 'keyword', 'function', 'variable', 'number', 'operator', 'type', 'class', 'parameter', and others you consider important. Format: [{\"scope\":\"token-type\",\"settings\":{\"foreground\":\"#hexcolor\",\"fontStyle\":\"italic|bold|underline|none\"}}]. Colors should coordinate with the base theme."
-								},
-								{ 
-									role: "user", 
-									content: `Create syntax highlighting colors based on this theme palette: primary=${primary}, secondary=${secondary}, accent=${accent}, background=${background}, foreground=${foreground}. Theme description: ${themeDescription}`
-								}
+								{ role: "system", content: tokenColorsPrompt },
+								{ role: "user", content: `Create syntax highlighting colors based on this theme palette: primary=${primary}, secondary=${secondary}, accent=${accent}, background=${background}, foreground=${foreground}. Theme description: ${themeDescription}` }
 							],
 							max_completion_tokens: 2000
 						});
