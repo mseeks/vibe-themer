@@ -3,15 +3,11 @@
  */
 
 /**
- * Normalizes a color string to a valid hex color
- * Handles various formats and edge cases
- * @param color The color string to normalize
- * @returns A normalized hex color string
+ * Cleans and validates a color string input
+ * @param color The input color string
+ * @returns Cleaned color string with # prefix
  */
-export function normalizeHexColor(color: string): string {
-    console.log(`Normalizing color: "${color}"`);
-    
-    // Handle undefined/null/empty cases
+function cleanColorInput(color: string): string {
     if (!color) {
         console.log('-> Empty color, using default black');
         return '#000000'; // Default to black for undefined/null
@@ -27,7 +23,15 @@ export function normalizeHexColor(color: string): string {
         console.log(`-> Added # prefix: "${color}"`);
     }
     
-    // Handle shorthand hex codes (#fff -> #ffffff)
+    return color.toLowerCase();
+}
+
+/**
+ * Expands shorthand hex codes (#rgb -> #rrggbb)
+ * @param color The hex color string
+ * @returns Expanded hex color string if shorthand, or original
+ */
+function expandShorthandHex(color: string): string {
     if (color.length === 4 && /^#[0-9a-fA-F]{3}$/.test(color)) {
         const r = color[1];
         const g = color[2];
@@ -35,11 +39,15 @@ export function normalizeHexColor(color: string): string {
         color = `#${r}${r}${g}${g}${b}${b}`;
         console.log(`-> Expanded shorthand hex: "${color}"`);
     }
-    
-    // Ensure lowercase
-    color = color.toLowerCase();
-    
-    // Handle RGB format
+    return color;
+}
+
+/**
+ * Converts RGB format to hex
+ * @param color The color string that might be in RGB format
+ * @returns Hex color string if RGB was detected, or original
+ */
+function convertRgbToHex(color: string): string {
     const rgbMatch = color.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
     if (rgbMatch) {
         const r = parseInt(rgbMatch[1]).toString(16).padStart(2, '0');
@@ -48,8 +56,15 @@ export function normalizeHexColor(color: string): string {
         color = `#${r}${g}${b}`;
         console.log(`-> Converted RGB to hex: "${color}"`);
     }
-    
-    // Handle RGBA format by removing alpha
+    return color;
+}
+
+/**
+ * Converts RGBA format to hex (removing alpha)
+ * @param color The color string that might be in RGBA format
+ * @returns Hex color string if RGBA was detected, or original
+ */
+function convertRgbaToHex(color: string): string {
     const rgbaMatch = color.match(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*[\d\.]+\s*\)/i);
     if (rgbaMatch) {
         const r = parseInt(rgbaMatch[1]).toString(16).padStart(2, '0');
@@ -58,8 +73,15 @@ export function normalizeHexColor(color: string): string {
         color = `#${r}${g}${b}`;
         console.log(`-> Converted RGBA to hex (alpha removed): "${color}"`);
     }
-    
-    // Handle HSL format with simple conversion
+    return color;
+}
+
+/**
+ * Converts HSL format to hex
+ * @param color The color string that might be in HSL format
+ * @returns Hex color string if HSL was detected, or original
+ */
+function convertHslToHex(color: string): string {
     const hslMatch = color.match(/hsl\(\s*(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?\s*\)/i);
     if (hslMatch) {
         // Basic HSL to RGB conversion, not perfect but a fallback
@@ -91,14 +113,29 @@ export function normalizeHexColor(color: string): string {
         color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
         console.log(`-> Converted HSL to hex: "${color}"`);
     }
-    
-    // Extract just the hex part if there's any extra text
+    return color;
+}
+
+/**
+ * Extracts a valid hex part from a string
+ * @param color The color string that might contain a hex code
+ * @returns The extracted hex part if found, or original
+ */
+function extractHexPart(color: string): string {
     const hexMatch = color.match(/#[0-9a-f]{3,6}/i);
     if (hexMatch && hexMatch[0] !== color) {
         color = hexMatch[0];
         console.log(`-> Extracted hex part from string: "${color}"`);
     }
-    
+    return color;
+}
+
+/**
+ * Validates and fixes hex length (padding or truncating)
+ * @param color The hex color string to validate
+ * @returns A valid 6-digit hex color or original if valid
+ */
+function validateHexLength(color: string): string {
     // Return as is if it passes the hex validation
     if (/^#[0-9a-f]{6}$/i.test(color)) {
         console.log(`-> Valid 6-digit hex color: "${color}"`);
@@ -120,8 +157,15 @@ export function normalizeHexColor(color: string): string {
         return color.toLowerCase();
     }
     
-    // If all else fails, use a default color based on the original string
-    // This creates a somewhat consistent color from the invalid input
+    return color;
+}
+
+/**
+ * Generates a fallback color from a string
+ * @param color The original color string
+ * @returns A generated hex color
+ */
+function generateFallbackColor(color: string): string {
     console.warn(`Could not normalize color: "${color}", using fallback algorithm`);
     
     // Generate a deterministic color based on the input string
@@ -139,6 +183,39 @@ export function normalizeHexColor(color: string): string {
     
     console.log(`-> Generated fallback color: "${fallbackColor}"`);
     return fallbackColor;
+}
+
+/**
+ * Normalizes a color string to a valid hex color
+ * Handles various formats and edge cases
+ * @param color The color string to normalize
+ * @returns A normalized hex color string
+ */
+export function normalizeHexColor(color: string): string {
+    console.log(`Normalizing color: "${color}"`);
+    
+    // Clean and validate input
+    color = cleanColorInput(color);
+    
+    // Convert various formats to hex
+    color = expandShorthandHex(color);
+    color = convertRgbToHex(color);
+    color = convertRgbaToHex(color);
+    color = convertHslToHex(color);
+    
+    // Extract hex part if mixed with other text
+    color = extractHexPart(color);
+    
+    // Validate and fix hex length
+    color = validateHexLength(color);
+    
+    // Check if we have a valid hex color
+    if (/^#[0-9a-f]{6}$/i.test(color)) {
+        return color;
+    }
+    
+    // If all else fails, use the fallback algorithm
+    return generateFallbackColor(color);
 }
 
 /**
