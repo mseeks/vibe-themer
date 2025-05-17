@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { normalizeHexColor, getContrastColor, adjustColor, isDarkTheme } from './utils/colorUtils';
 import { initializeOpenAIClient, getOpenAIClient } from './services/openaiService';
+import { loadPromptTemplates, PromptTemplates } from './services/promptService';
 
 // Reference to the OpenAI client instance
 let openai: OpenAI | undefined;
@@ -28,13 +29,16 @@ interface ThemeData {
 let lastGeneratedTheme: ThemeData | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
-    // Load prompt templates from text files
-    // Use extensionUri.fsPath to locate prompts in src/prompts at runtime
-    const promptsDir = path.join(context.extensionUri.fsPath, 'src', 'prompts');
-    const baseColorsPrompt = fs.readFileSync(path.join(promptsDir, 'baseColorsPrompt.txt'), 'utf8');
-    const tokenColorsPrompt = fs.readFileSync(path.join(promptsDir, 'tokenColorsPrompt.txt'), 'utf8');
-
     console.log('Congratulations, your extension "dynamic-theme-changer" is now active!');
+
+    // Load prompt templates
+    let promptTemplates: PromptTemplates;
+    try {
+        promptTemplates = loadPromptTemplates(context);
+    } catch (error: any) {
+        vscode.window.showErrorMessage(`Error loading prompt templates: ${error.message}`);
+        return; // Deactivate if templates can't be loaded
+    }
 
     // Initialize OpenAI client
     const initialized = await initializeOpenAIClient(context);
@@ -47,6 +51,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Register command to change theme based on natural language description
     let changeThemeCommand = vscode.commands.registerCommand('dynamicThemeChanger.changeTheme', async () => {
+        // Make sure we have the OpenAI client
         if (!openai) {
             vscode.window.showErrorMessage('OpenAI client not initialized. Please ensure API key is set.');
             // Attempt to re-initialize or prompt for key again
@@ -81,7 +86,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     const completion = await openai!.chat.completions.create({
                         model: "o3",
                         messages: [
-                            { role: "system", content: baseColorsPrompt },
+                            { role: "system", content: promptTemplates.baseColorsPrompt },
                             { role: "user", content: themeDescription }
                         ],
                         max_completion_tokens: 2000
@@ -324,7 +329,7 @@ export async function activate(context: vscode.ExtensionContext) {
 						const tokenCompletion = await openai!.chat.completions.create({
 							model: "o3",
 							messages: [
-								{ role: "system", content: tokenColorsPrompt },
+								{ role: "system", content: promptTemplates.tokenColorsPrompt },
 								{ role: "user", content: `Create syntax highlighting colors based on this theme palette: primary=${primary}, secondary=${secondary}, accent=${accent}, background=${background}, foreground=${foreground}. Theme description: ${themeDescription}` }
 							],
 							max_completion_tokens: 2000
