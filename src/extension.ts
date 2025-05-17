@@ -95,10 +95,9 @@ export async function activate(context: vscode.ExtensionContext) {
 					// First create base colors
 					const completion = await openai!.chat.completions.create({
 						model: "o3",
-						messages: [
-							{ 
+						messages: [								{ 
 								role: "system", 
-								content: "You are a color theme assistant. Given a description, create a cohesive color palette with 5 colors as JSON. Format as: {\"primary\":\"#hexcolor\",\"secondary\":\"#hexcolor\",\"accent\":\"#hexcolor\",\"background\":\"#hexcolor\",\"foreground\":\"#hexcolor\"}. All values must be valid hex colors."
+								content: "You are a professional UI/UX color theme designer specializing in code editor themes. Create a cohesive, visually pleasing color palette based on descriptions. \n\nColor usage in the theme:\n- primary: Used for activity bar, title bar, and selection highlights. Should be distinctive but not harsh.\n- secondary: Used for status bar, borders, and inactive elements. Should complement primary.\n- accent: Used for important UI elements, active text, cursor, badges, and buttons. Should provide good visual contrast and draw attention.\n- background: Main background color for editor and UI. Should be easy on the eyes for long coding sessions.\n- foreground: Main text color. Must have excellent contrast with background for readability.\n\nEnsure sufficient contrast between pairs (foreground/background, text/selection highlight). For dark themes, avoid pure black backgrounds. For light themes, avoid pure white backgrounds. Ensure the accent color stands out against both primary and background.\n\nIMPORTANT FORMAT RULES:\n1. Return ONLY a valid JSON object with no explanation or commentary\n2. Use EXACTLY this format: {\"primary\":\"#RRGGBB\",\"secondary\":\"#RRGGBB\",\"accent\":\"#RRGGBB\",\"background\":\"#RRGGBB\",\"foreground\":\"#RRGGBB\"}\n3. All hex colors MUST be lowercase, must include the # prefix, and must use exactly 6 hex digits (not 3)\n4. Examples of valid colors: \"#ff0000\" for red, \"#00ff00\" for green, \"#0000ff\" for blue, \"#ffffff\" for white, \"#000000\" for black\n5. Examples of invalid colors: \"ff0000\" (missing #), \"#fff\" (shorthand), \"#FF0000\" (uppercase), \"rgb(255,0,0)\" (wrong format)\n6. Do not include any rgb(), rgba(), hsl(), or other non-hex color formats\n7. Do not include any additional properties, comments, or explanations in the JSON\n\nDouble-check that:\n- All values follow the exact format \"#rrggbb\" with lowercase letters\n- The JSON is properly formatted with quotes around property names and values\n- The JSON has exactly 5 properties: primary, secondary, accent, background, foreground\n- There are no trailing commas, comments, or other syntax errors\n\nExample of correctly formatted response:\n{\"primary\":\"#3b82f6\",\"secondary\":\"#6b7280\",\"accent\":\"#f97316\",\"background\":\"#1e293b\",\"foreground\":\"#e2e8f0\"}"
 							},
 							{ 
 								role: "user", 
@@ -109,17 +108,222 @@ export async function activate(context: vscode.ExtensionContext) {
 					});
 
 					const colorResponse = completion.choices[0]?.message?.content?.trim();
+					console.log('Raw color response from OpenAI:', colorResponse);
 					
 					try {
-						// Parse the JSON response
-						const colorPalette = JSON.parse(colorResponse || '{}');
-						const { primary, secondary, accent, background, foreground } = colorPalette;
-
-						// Validate all colors are valid hex codes
-						const validHexPattern = /^#[0-9A-Fa-f]{6}$/;
-						if (![primary, secondary, accent, background, foreground].every(c => validHexPattern.test(c))) {
-							throw new Error('Invalid color format received');
+						// Define ColorPalette type for proper typing
+						interface ColorPalette {
+							primary?: string;
+							secondary?: string;
+							accent?: string;
+							background?: string;
+							foreground?: string;
+							[key: string]: string | undefined;
 						}
+						
+						// Parse the JSON response with enhanced error handling
+						let colorPalette: ColorPalette = {};
+						try {
+							// First attempt: direct JSON parsing
+							console.log('Attempting to parse JSON directly');
+							colorPalette = JSON.parse(colorResponse || '{}') as ColorPalette;
+						} catch (jsonError) {
+							console.error('Failed to parse JSON:', jsonError);
+							
+							// Try to extract a JSON object if the model included extra text
+							const jsonMatch = colorResponse?.match(/\{[\s\S]*\}/);
+							if (jsonMatch) {
+								try {
+									console.log('Attempting to parse extracted JSON:', jsonMatch[0]);
+									colorPalette = JSON.parse(jsonMatch[0]);
+								} catch (extractError) {
+									console.error('Failed to parse extracted JSON:', extractError);
+									
+									// Try more aggressive fixes for common JSON issues
+									let fixedJson = jsonMatch[0];
+									console.log('Attempting to fix JSON formatting issues');
+									
+									// Fix missing quotes around property names
+									fixedJson = fixedJson.replace(/(\{|\,)\s*([a-zA-Z0-9_]+)\s*\:/g, '$1"$2":');
+									
+									// Fix single quotes instead of double quotes
+									fixedJson = fixedJson.replace(/'/g, '"');
+									
+									// Remove trailing commas
+									fixedJson = fixedJson.replace(/,\s*(\}|\])/g, '$1');
+									
+									// Remove comments
+									fixedJson = fixedJson.replace(/\/\/.*$/gm, '');
+									
+									console.log('Fixed JSON attempt:', fixedJson);
+									
+									try {
+										colorPalette = JSON.parse(fixedJson);
+										console.log('Successfully parsed fixed JSON');
+									} catch (fixError) {
+										console.error('Failed to parse fixed JSON:', fixError);
+										
+										// Last resort: manual extraction of color values using regex
+										console.log('Attempting manual extraction of color values');
+										colorPalette = {};
+										
+										// Extract each color property separately using regex
+										const primaryMatch = colorResponse?.match(/primary['":\s]+([#0-9a-zA-Z]+)/);
+										const secondaryMatch = colorResponse?.match(/secondary['":\s]+([#0-9a-zA-Z]+)/);
+										const accentMatch = colorResponse?.match(/accent['":\s]+([#0-9a-zA-Z]+)/);
+										const backgroundMatch = colorResponse?.match(/background['":\s]+([#0-9a-zA-Z]+)/);
+										const foregroundMatch = colorResponse?.match(/foreground['":\s]+([#0-9a-zA-Z]+)/);
+										
+										if (primaryMatch) colorPalette.primary = primaryMatch[1];
+										if (secondaryMatch) colorPalette.secondary = secondaryMatch[1];
+										if (accentMatch) colorPalette.accent = accentMatch[1];
+										if (backgroundMatch) colorPalette.background = backgroundMatch[1];
+										if (foregroundMatch) colorPalette.foreground = foregroundMatch[1];
+										
+										console.log('Manually extracted values:', colorPalette);
+										
+										// Check if we found at least some values
+										if (Object.keys(colorPalette).length === 0) {
+											throw new Error('Could not extract any color values from API response');
+										}
+									}
+								}
+							} else {
+								// Try a last-ditch effort to extract individual color values
+								console.log('No JSON object found, attempting manual extraction');
+								colorPalette = {};
+								
+								// Extract each color property separately using regex
+								const primaryMatch = colorResponse?.match(/primary['":\s]+([#0-9a-zA-Z]+)/);
+								const secondaryMatch = colorResponse?.match(/secondary['":\s]+([#0-9a-zA-Z]+)/);
+								const accentMatch = colorResponse?.match(/accent['":\s]+([#0-9a-zA-Z]+)/);
+								const backgroundMatch = colorResponse?.match(/background['":\s]+([#0-9a-zA-Z]+)/);
+								const foregroundMatch = colorResponse?.match(/foreground['":\s]+([#0-9a-zA-Z]+)/);
+								
+								if (primaryMatch) colorPalette.primary = primaryMatch[1];
+								if (secondaryMatch) colorPalette.secondary = secondaryMatch[1];
+								if (accentMatch) colorPalette.accent = accentMatch[1];
+								if (backgroundMatch) colorPalette.background = backgroundMatch[1];
+								if (foregroundMatch) colorPalette.foreground = foregroundMatch[1];
+								
+								console.log('Manually extracted values:', colorPalette);
+								
+								// Check if we found at least some values
+								if (Object.keys(colorPalette).length === 0) {
+									throw new Error('Could not extract any color values from API response');
+								}
+							}
+						}
+
+						// Log raw color values before processing
+						console.log('Raw color palette from OpenAI:', colorPalette);
+						
+						// Extract colors from palette with proper defaults
+						const rawPrimary = colorPalette?.primary;
+						const rawSecondary = colorPalette?.secondary;
+						const rawAccent = colorPalette?.accent;
+						const rawBackground = colorPalette?.background;
+						const rawForeground = colorPalette?.foreground;
+						
+						// Log each raw color before normalization
+						console.log('Raw color values before normalization:', { 
+							primary: rawPrimary, 
+							secondary: rawSecondary, 
+							accent: rawAccent, 
+							background: rawBackground, 
+							foreground: rawForeground 
+						});
+						
+						// Set defaults for missing colors
+						const defaultColors = {
+							primary: '#007acc',    // VS Code blue
+							secondary: '#444444',  // Dark gray
+							accent: '#ff8c00',     // Orange accent
+							background: '#1e1e1e', // Dark theme background
+							foreground: '#d4d4d4'  // Dark theme text
+						};
+						
+						// Attempt to normalize/fix color formats
+						let primary = normalizeHexColor(rawPrimary || defaultColors.primary);
+						let secondary = normalizeHexColor(rawSecondary || defaultColors.secondary);
+						let accent = normalizeHexColor(rawAccent || defaultColors.accent);
+						let background = normalizeHexColor(rawBackground || defaultColors.background);
+						let foreground = normalizeHexColor(rawForeground || defaultColors.foreground);
+						
+						console.log('Normalized color values:', { primary, secondary, accent, background, foreground });
+
+						// Check color contrast and fix if needed
+						const contrastCheck = (bg: string, fg: string, name: string) => {
+							// Simple check for minimum contrast - if both are too similar, adjust one
+							bg = bg.replace('#', '');
+							fg = fg.replace('#', '');
+							const bgR = parseInt(bg.substring(0, 2), 16);
+							const bgG = parseInt(bg.substring(2, 4), 16);
+							const bgB = parseInt(bg.substring(4, 6), 16);
+							const fgR = parseInt(fg.substring(0, 2), 16);
+							const fgG = parseInt(fg.substring(2, 4), 16);
+							const fgB = parseInt(fg.substring(4, 6), 16);
+							
+							const luminanceDiff = Math.abs(
+								(0.299 * bgR + 0.587 * bgG + 0.114 * bgB) - 
+								(0.299 * fgR + 0.587 * fgG + 0.114 * fgB)
+							);
+							
+							if (luminanceDiff < 75) { // Threshold for readable contrast
+								console.log(`Increasing contrast for ${name}, current luminance diff: ${luminanceDiff}`);
+								// Adjust foreground color by 20% in each channel to improve contrast
+								const adjustedFg = '#' + [fgR, fgG, fgB].map(val => {
+									if (val < 128) {
+										return Math.max(0, val - 50).toString(16).padStart(2, '0');
+									} else {
+										return Math.min(255, val + 50).toString(16).padStart(2, '0');
+									}
+								}).join('');
+								console.log(`Adjusted ${name} foreground from #${fg} to ${adjustedFg} for better contrast`);
+								return adjustedFg;
+							}
+							return '#' + fg;
+						};
+						
+						// Ensure foreground has good contrast with background
+						foreground = contrastCheck(background, foreground, 'foreground');
+						
+						// Validate all colors with more flexible pattern (ensure it starts with # and has valid hex chars)
+						const validHexPattern = /^#[0-9a-f]{6}$/i;
+						let invalidColors = [];
+						
+						// Check each color after normalization
+						if (!validHexPattern.test(primary)) invalidColors.push(`primary: ${primary}`);
+						if (!validHexPattern.test(secondary)) invalidColors.push(`secondary: ${secondary}`);
+						if (!validHexPattern.test(accent)) invalidColors.push(`accent: ${accent}`);
+						if (!validHexPattern.test(background)) invalidColors.push(`background: ${background}`);
+						if (!validHexPattern.test(foreground)) invalidColors.push(`foreground: ${foreground}`);
+						
+						// If there are still invalid colors after normalization, use fallbacks but continue
+						if (invalidColors.length > 0) {
+							console.warn(`Some colors remained invalid after normalization: ${invalidColors.join(', ')}`);
+							console.warn('Using fallback colors for invalid values');
+							
+							// Apply defaults for any invalid colors
+							if (!validHexPattern.test(primary)) primary = defaultColors.primary;
+							if (!validHexPattern.test(secondary)) secondary = defaultColors.secondary;
+							if (!validHexPattern.test(accent)) accent = defaultColors.accent;
+							if (!validHexPattern.test(background)) background = defaultColors.background;
+							if (!validHexPattern.test(foreground)) foreground = defaultColors.foreground;
+							
+							// Ensure everything is lowercase
+							primary = primary.toLowerCase();
+							secondary = secondary.toLowerCase();
+							accent = accent.toLowerCase();
+							background = background.toLowerCase();
+							foreground = foreground.toLowerCase();
+							
+							// Show warning to user but continue
+							vscode.window.showWarningMessage('Some colors were invalid and have been replaced with fallbacks.');
+						}
+						
+						// Update the colorPalette with normalized values
+						colorPalette = { primary, secondary, accent, background, foreground };
 						
 						// Store the theme data
 						lastGeneratedTheme = {
@@ -291,7 +495,37 @@ export async function activate(context: vscode.ExtensionContext) {
 							"panel.background": background,
 							"panel.border": secondary,
 							"panelTitle.activeForeground": accent,
-							"panelTitle.inactiveForeground": adjustColor(foreground, 0.6)
+							"panelTitle.inactiveForeground": adjustColor(foreground, 0.6),
+							
+							// Quick Pick (Command Palette)
+							"quickInput.background": background,
+							"quickInput.foreground": foreground,
+							"quickInputTitle.background": adjustColor(background, 0.9),
+							"quickInputList.focusBackground": primary,
+							"quickInputList.focusForeground": getContrastColor(primary),
+							
+							// Settings UI
+							"settings.headerForeground": accent,
+							"settings.modifiedItemIndicator": accent,
+							"settings.dropdownBackground": background,
+							"settings.dropdownForeground": foreground,
+							"settings.dropdownBorder": secondary,
+							"settings.checkboxBackground": background,
+							"settings.checkboxForeground": foreground,
+							"settings.checkboxBorder": secondary,
+							"settings.textInputBackground": background,
+							"settings.textInputForeground": foreground,
+							"settings.textInputBorder": secondary,
+							"settings.numberInputBackground": background,
+							"settings.numberInputForeground": foreground,
+							"settings.numberInputBorder": secondary,
+							
+							// Tree View (File Explorer, etc.)
+							"tree.indentGuidesStroke": adjustColor(foreground, 0.4),
+							"focusBorder": accent,
+							"foreground": foreground,
+							"widget.shadow": "#00000030",
+							"selection.background": adjustColor(accent, 0.3),
 						};
 						
 						// Choose appropriate configuration target based on whether a workspace is open
@@ -601,7 +835,37 @@ export async function activate(context: vscode.ExtensionContext) {
 						"panel.background": colors.background,
 						"panel.border": colors.secondary,
 						"panelTitle.activeForeground": colors.accent,
-						"panelTitle.inactiveForeground": adjustColor(colors.foreground, 0.6)
+						"panelTitle.inactiveForeground": adjustColor(colors.foreground, 0.6),
+						
+						// Quick Pick (Command Palette)
+						"quickInput.background": colors.background,
+						"quickInput.foreground": colors.foreground,
+						"quickInputTitle.background": adjustColor(colors.background, 0.9),
+						"quickInputList.focusBackground": colors.primary,
+						"quickInputList.focusForeground": getContrastColor(colors.primary),
+						
+						// Settings UI
+						"settings.headerForeground": colors.accent,
+						"settings.modifiedItemIndicator": colors.accent,
+						"settings.dropdownBackground": colors.background,
+						"settings.dropdownForeground": colors.foreground,
+						"settings.dropdownBorder": colors.secondary,
+						"settings.checkboxBackground": colors.background,
+						"settings.checkboxForeground": colors.foreground,
+						"settings.checkboxBorder": colors.secondary,
+						"settings.textInputBackground": colors.background,
+						"settings.textInputForeground": colors.foreground,
+						"settings.textInputBorder": colors.secondary,
+						"settings.numberInputBackground": colors.background,
+						"settings.numberInputForeground": colors.foreground,
+						"settings.numberInputBorder": colors.secondary,
+						
+						// Tree View (File Explorer, etc.)
+						"tree.indentGuidesStroke": adjustColor(colors.foreground, 0.4),
+						"focusBorder": colors.accent,
+						"foreground": colors.foreground,
+						"widget.shadow": "#00000030",
+						"selection.background": adjustColor(colors.accent, 0.3),
 					},
 					"tokenColors": lastGeneratedTheme?.tokenColors || []
 				};
@@ -674,6 +938,140 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	});
 	context.subscriptions.push(exportThemeCommand);
+}
+
+// Helper function to normalize color formats
+function normalizeHexColor(color: string): string {
+    console.log(`Normalizing color: "${color}"`);
+    
+    // Handle undefined/null/empty cases
+    if (!color) {
+        console.log('-> Empty color, using default black');
+        return '#000000'; // Default to black for undefined/null
+    }
+    
+    // Remove any whitespace and quotes
+    color = color.trim().replace(/['"]/g, '');
+    console.log(`-> After trimming and removing quotes: "${color}"`);
+    
+    // Add # if it's missing
+    if (!color.startsWith('#')) {
+        color = '#' + color;
+        console.log(`-> Added # prefix: "${color}"`);
+    }
+    
+    // Handle shorthand hex codes (#fff -> #ffffff)
+    if (color.length === 4 && /^#[0-9a-fA-F]{3}$/.test(color)) {
+        const r = color[1];
+        const g = color[2];
+        const b = color[3];
+        color = `#${r}${r}${g}${g}${b}${b}`;
+        console.log(`-> Expanded shorthand hex: "${color}"`);
+    }
+    
+    // Ensure lowercase
+    color = color.toLowerCase();
+    
+    // Handle RGB format
+    const rgbMatch = color.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+    if (rgbMatch) {
+        const r = parseInt(rgbMatch[1]).toString(16).padStart(2, '0');
+        const g = parseInt(rgbMatch[2]).toString(16).padStart(2, '0');
+        const b = parseInt(rgbMatch[3]).toString(16).padStart(2, '0');
+        color = `#${r}${g}${b}`;
+        console.log(`-> Converted RGB to hex: "${color}"`);
+    }
+    
+    // Handle RGBA format by removing alpha
+    const rgbaMatch = color.match(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*[\d\.]+\s*\)/i);
+    if (rgbaMatch) {
+        const r = parseInt(rgbaMatch[1]).toString(16).padStart(2, '0');
+        const g = parseInt(rgbaMatch[2]).toString(16).padStart(2, '0');
+        const b = parseInt(rgbaMatch[3]).toString(16).padStart(2, '0');
+        color = `#${r}${g}${b}`;
+        console.log(`-> Converted RGBA to hex (alpha removed): "${color}"`);
+    }
+    
+    // Handle HSL format with simple conversion
+    const hslMatch = color.match(/hsl\(\s*(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?\s*\)/i);
+    if (hslMatch) {
+        // Basic HSL to RGB conversion, not perfect but a fallback
+        const h = parseInt(hslMatch[1]) / 360;
+        const s = parseInt(hslMatch[2]) / 100;
+        const l = parseInt(hslMatch[3]) / 100;
+        
+        // Convert HSL to RGB using algorithm
+        let r, g, b;
+        if (s === 0) {
+            r = g = b = Math.round(l * 255);
+        } else {
+            const hue2rgb = (p: number, q: number, t: number) => {
+                if (t < 0) t += 1;
+                if (t > 1) t -= 1;
+                if (t < 1/6) return p + (q - p) * 6 * t;
+                if (t < 1/2) return q;
+                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                return p;
+            };
+            
+            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            const p = 2 * l - q;
+            r = Math.round(hue2rgb(p, q, h + 1/3) * 255);
+            g = Math.round(hue2rgb(p, q, h) * 255);
+            b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
+        }
+        
+        color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        console.log(`-> Converted HSL to hex: "${color}"`);
+    }
+    
+    // Extract just the hex part if there's any extra text
+    const hexMatch = color.match(/#[0-9a-f]{3,6}/i);
+    if (hexMatch && hexMatch[0] !== color) {
+        color = hexMatch[0];
+        console.log(`-> Extracted hex part from string: "${color}"`);
+    }
+    
+    // Return as is if it passes the hex validation
+    if (/^#[0-9a-f]{6}$/i.test(color)) {
+        console.log(`-> Valid 6-digit hex color: "${color}"`);
+        return color.toLowerCase();
+    }
+    
+    // Handle truncated hex (less than 6 digits)
+    if (/^#[0-9a-f]{1,5}$/i.test(color)) {
+        // Pad with zeros if needed
+        color = color.padEnd(7, '0');
+        console.log(`-> Padded hex to 6 digits: "${color}"`);
+        return color.toLowerCase();
+    }
+    
+    // Handle extended hex (more than 6 digits) by truncating
+    if (/^#[0-9a-f]{7,}$/i.test(color)) {
+        color = color.substring(0, 7);
+        console.log(`-> Truncated hex to 6 digits: "${color}"`);
+        return color.toLowerCase();
+    }
+    
+    // If all else fails, use a default color based on the original string
+    // This creates a somewhat consistent color from the invalid input
+    console.warn(`Could not normalize color: "${color}", using fallback algorithm`);
+    
+    // Generate a deterministic color based on the input string
+    let hash = 0;
+    for (let i = 0; i < color.length; i++) {
+        hash = color.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Convert hash to a valid hex color
+    let fallbackColor = '#';
+    for (let i = 0; i < 3; i++) {
+        const value = (hash >> (i * 8)) & 0xFF;
+        fallbackColor += value.toString(16).padStart(2, '0');
+    }
+    
+    console.log(`-> Generated fallback color: "${fallbackColor}"`);
+    return fallbackColor;
 }
 
 // Helper function to determine a contrasting color (black or white) for text
