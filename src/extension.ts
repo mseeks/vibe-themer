@@ -382,9 +382,10 @@ export async function activate(context: vscode.ExtensionContext) {
 							// Activity Bar
 							"activityBar.background": primary,
 							"activityBar.foreground": getContrastColor(primary),
+							"activityBar.activeForeground": getContrastColor(primary),
+							"activityBar.inactiveForeground": adjustColor(getContrastColor(primary), 0.6),
 							"activityBar.activeBorder": accent,
-							"activityBar.activeBackground": primary,
-							"activityBar.inactiveForeground": getContrastColor(primary, 0.6),
+							"activityBar.activeBackground": adjustColor(primary, 1.05),
 							"activityBarBadge.background": accent,
 							"activityBarBadge.foreground": getContrastColor(accent),
 							
@@ -392,7 +393,10 @@ export async function activate(context: vscode.ExtensionContext) {
 							"input.background": adjustColor(background, 0.95),
 							"input.foreground": foreground,
 							"input.border": secondary,
+							"input.placeholderForeground": adjustColor(foreground, 0.6),
 							"inputOption.activeBorder": accent,
+							"inputOption.activeForeground": accent,
+							"inputOption.activeBackground": adjustColor(background, 0.9),
 							"inputValidation.errorBackground": "#ff000033",
 							"inputValidation.errorBorder": "#ff0000",
 							
@@ -426,6 +430,37 @@ export async function activate(context: vscode.ExtensionContext) {
 							"list.inactiveSelectionBackground": adjustColor(primary, 0.7),
 							"list.inactiveSelectionForeground": getContrastColor(adjustColor(primary, 0.7)),
 							"list.highlightForeground": accent,
+							"list.focusHighlightForeground": accent,
+							"list.focusForeground": getContrastColor(primary),
+							"list.focusBackground": adjustColor(primary, 0.8),
+							
+							// Links - Fix for extension manager and other links
+							"textLink.foreground": accent,
+							"textLink.activeForeground": adjustColor(accent, 1.2),
+							"pickerGroup.foreground": accent,
+							"pickerGroup.border": secondary,
+							
+							// Extension view
+							"extensionButton.prominentForeground": getContrastColor(accent),
+							"extensionButton.prominentBackground": accent,
+							"extensionButton.prominentHoverBackground": adjustColor(accent, 1.1),
+							"extensionIcon.starForeground": accent,
+							"extensionIcon.verifiedForeground": accent,
+							"extensionIcon.preReleaseForeground": adjustColor(accent, 0.8),
+							"extensionBadge.remoteBackground": primary,
+							"extensionBadge.remoteForeground": getContrastColor(primary),
+							
+							// Search
+							"searchEditor.findMatchBackground": adjustColor(accent, 0.3),
+							"searchEditor.findMatchBorder": accent,
+							"search.resultsInfoForeground": accent,
+							"search.matchBackground": adjustColor(accent, 0.3),
+							"search.matchBorder": accent,
+							"searchMatch.highlight": adjustColor(accent, 0.3),
+							"editor.findMatchBackground": adjustColor(accent, 0.3),
+							"editor.findMatchBorder": accent,
+							"editor.findMatchHighlightBackground": adjustColor(accent, 0.2),
+							"editor.findRangeHighlightBackground": adjustColor(accent, 0.1),
 							
 							// Buttons
 							"button.background": accent,
@@ -737,12 +772,13 @@ export async function activate(context: vscode.ExtensionContext) {
 					"name": themeName,
 					"type": isDarkTheme(colors.background) ? "dark" : "light",
 					"colors": {
-						// Workbench colors
+						// Activity Bar
 						"activityBar.background": colors.primary,
 						"activityBar.foreground": getContrastColor(colors.primary),
+						"activityBar.activeForeground": getContrastColor(colors.primary),
+						"activityBar.inactiveForeground": adjustColor(getContrastColor(colors.primary), 0.6),
 						"activityBar.activeBorder": colors.accent,
-						"activityBar.activeBackground": colors.primary,
-						"activityBar.inactiveForeground": getContrastColor(colors.primary, 0.6),
+						"activityBar.activeBackground": adjustColor(colors.primary, 1.05),
 						"activityBarBadge.background": colors.accent,
 						"activityBarBadge.foreground": getContrastColor(colors.accent),
 						
@@ -750,7 +786,10 @@ export async function activate(context: vscode.ExtensionContext) {
 						"input.background": adjustColor(colors.background, 0.95),
 						"input.foreground": colors.foreground,
 						"input.border": colors.secondary,
+						"input.placeholderForeground": adjustColor(colors.foreground, 0.6),
 						"inputOption.activeBorder": colors.accent,
+						"inputOption.activeForeground": colors.accent,
+						"inputOption.activeBackground": adjustColor(colors.background, 0.9),
 						
 						// Terminal
 						"terminal.background": colors.background,
@@ -766,6 +805,35 @@ export async function activate(context: vscode.ExtensionContext) {
 						"list.inactiveSelectionBackground": adjustColor(colors.primary, 0.7),
 						"list.inactiveSelectionForeground": getContrastColor(adjustColor(colors.primary, 0.7)),
 						"list.highlightForeground": colors.accent,
+						"list.focusHighlightForeground": colors.accent,
+						"list.focusForeground": getContrastColor(colors.primary),
+						"list.focusBackground": adjustColor(colors.primary, 0.8),
+						
+						// Links - Fix for extension manager and other links
+						"textLink.foreground": colors.accent,
+						"textLink.activeForeground": adjustColor(colors.accent, 1.2),
+						
+						// Extension view
+						"extensionButton.prominentForeground": getContrastColor(colors.accent),
+						"extensionButton.prominentBackground": colors.accent,
+						"extensionButton.prominentHoverBackground": adjustColor(colors.accent, 1.1),
+						"extensionIcon.starForeground": colors.accent,
+						"extensionIcon.verifiedForeground": colors.accent,
+						"extensionIcon.preReleaseForeground": adjustColor(colors.accent, 0.8),
+						"extensionBadge.remoteBackground": colors.primary,
+						"extensionBadge.remoteForeground": getContrastColor(colors.primary),
+						
+						// Search
+						"searchEditor.findMatchBackground": adjustColor(colors.accent, 0.3),
+						"searchEditor.findMatchBorder": colors.accent,
+						"search.resultsInfoForeground": colors.accent,
+						"search.matchBackground": adjustColor(colors.accent, 0.3),
+						"search.matchBorder": colors.accent,
+						"searchMatch.highlight": adjustColor(colors.accent, 0.3),
+						"editor.findMatchBackground": adjustColor(colors.accent, 0.3),
+						"editor.findMatchBorder": colors.accent,
+						"editor.findMatchHighlightBackground": adjustColor(colors.accent, 0.2),
+						"editor.findRangeHighlightBackground": adjustColor(colors.accent, 0.1),
 						
 						// Buttons
 						"button.background": colors.accent,
