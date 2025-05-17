@@ -8,6 +8,7 @@ import { normalizeHexColor, getContrastColor, adjustColor, isDarkTheme } from '.
 import { initializeOpenAIClient, getOpenAIClient } from './services/openaiService';
 import { loadPromptTemplates, PromptTemplates } from './services/promptService';
 import { registerClearApiKeyCommand } from './commands/clearApiKeyCommand';
+import { registerResetThemeCommand } from './commands/resetThemeCommand';
 
 // Reference to the OpenAI client instance
 let openai: OpenAI | undefined;
@@ -610,110 +611,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Register command to clear API key (refactored)
 	registerClearApiKeyCommand(context, { current: openai });
 	
-	// Command to reset theme customizations
-	let resetThemeCommand = vscode.commands.registerCommand('dynamicThemeChanger.resetTheme', async () => {
-		try {
-			// Try to reset workspace settings first
-			const config = vscode.workspace.getConfiguration();
-			const configTarget = vscode.workspace.workspaceFolders 
-				? vscode.ConfigurationTarget.Workspace 
-				: vscode.ConfigurationTarget.Global;
-			
-			try {
-				console.log('Resetting theme customizations at target:', configTarget === vscode.ConfigurationTarget.Workspace ? 'Workspace' : 'Global');
-				
-				// First check if there are any customizations to clear
-				const currentColorCustomizations = config.get('workbench.colorCustomizations');
-				const currentTokenColorCustomizations = config.get('editor.tokenColorCustomizations');
-				
-				console.log('Current color customizations:', currentColorCustomizations);
-				console.log('Current token color customizations:', currentTokenColorCustomizations);
-				
-				// Reset both workbench and token color customizations
-				await Promise.all([
-					config.update('workbench.colorCustomizations', undefined, configTarget),
-					config.update('editor.tokenColorCustomizations', undefined, configTarget)
-				]);
-				
-				// Try both ways - with empty object and with undefined
-				if (Object.keys(config.get('workbench.colorCustomizations') || {}).length > 0) {
-					await config.update('workbench.colorCustomizations', {}, configTarget);
-				}
-				
-				if (Object.keys(config.get('editor.tokenColorCustomizations') || {}).length > 0) {
-					await config.update('editor.tokenColorCustomizations', {}, configTarget);
-				}
-				
-				// Clear the last generated theme
-				lastGeneratedTheme = undefined;
-				
-				// Also try to reset at the other level just to be sure
-				const otherTarget = configTarget === vscode.ConfigurationTarget.Workspace 
-					? vscode.ConfigurationTarget.Global 
-					: vscode.ConfigurationTarget.Workspace;
-				
-				try {
-					await Promise.all([
-						config.update('workbench.colorCustomizations', undefined, otherTarget),
-						config.update('editor.tokenColorCustomizations', undefined, otherTarget)
-					]);
-				} catch (otherError) {
-					// Ignore errors when trying to reset the other target
-					console.log('Note: Could not reset at other target level (expected if no workspace)');
-				}
-				
-				// Verify customizations are cleared
-				const verifyColorCustomizations = config.get('workbench.colorCustomizations');
-				const verifyTokenCustomizations = config.get('editor.tokenColorCustomizations');
-				
-				console.log('Verified color customizations after reset:', verifyColorCustomizations);
-				console.log('Verified token color customizations after reset:', verifyTokenCustomizations);
-				
-				// Force a theme reload by temporarily changing the theme and changing back
-				const currentTheme = config.get('workbench.colorTheme');
-				const tempTheme = currentTheme === 'Default Dark+' ? 'Default Light+' : 'Default Dark+';
-				
-				try {
-					// Quick toggle of theme to force refresh
-					await config.update('workbench.colorTheme', tempTheme, vscode.ConfigurationTarget.Global);
-					setTimeout(async () => {
-						await config.update('workbench.colorTheme', currentTheme, vscode.ConfigurationTarget.Global);
-					}, 300);
-				} catch (themeError) {
-					console.log('Theme toggle failed (non-critical):', themeError);
-				}
-				
-				vscode.window.showInformationMessage('All theme customizations cleared. Your selected theme should now display correctly.');
-			} catch (error) {
-				console.error('Error during primary reset:', error);
-				
-				// If updating workspace settings fails, try user settings
-				if (configTarget === vscode.ConfigurationTarget.Workspace) {
-					try {
-						await config.update('workbench.colorCustomizations', undefined, vscode.ConfigurationTarget.Global);
-						await config.update('editor.tokenColorCustomizations', undefined, vscode.ConfigurationTarget.Global);
-						
-						// Try with empty object as well
-						await config.update('workbench.colorCustomizations', {}, vscode.ConfigurationTarget.Global);
-						await config.update('editor.tokenColorCustomizations', {}, vscode.ConfigurationTarget.Global);
-						
-						// Clear the last generated theme
-						lastGeneratedTheme = undefined;
-						
-						vscode.window.showInformationMessage('Global theme customizations cleared.');
-					} catch (globalError: any) {
-						throw new Error(`Failed to reset theme: ${globalError.message}`);
-					}
-				} else {
-					throw error;
-				}
-			}
-		} catch (error: any) {
-			console.error('Theme reset error:', error);
-			vscode.window.showErrorMessage(`Failed to reset theme customizations: ${error.message}`);
-		}
-	});
-	context.subscriptions.push(resetThemeCommand);
+	// Register command to reset theme customizations (refactored)
+	registerResetThemeCommand(context, { current: lastGeneratedTheme });
 	
 	// Command to export the current theme as a VS Code theme file
 	let exportThemeCommand = vscode.commands.registerCommand('dynamicThemeChanger.exportTheme', async () => {
