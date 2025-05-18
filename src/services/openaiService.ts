@@ -45,6 +45,24 @@ export function getOpenAIClient(): OpenAI | undefined {
 }
 
 /**
+ * Ensures the OpenAI client is initialized and available.
+ * If not initialized, prompts the user for the API key and initializes the client.
+ * Returns the OpenAI client instance or undefined if initialization fails.
+ */
+export async function ensureOpenAIClient(context: vscode.ExtensionContext): Promise<OpenAI | undefined> {
+    let openai = getOpenAIClient();
+    if (!openai) {
+        const initialized = await initializeOpenAIClient(context);
+        if (!initialized) {
+            vscode.window.showErrorMessage('OpenAI client not initialized. Please ensure API key is set.');
+            return undefined;
+        }
+        openai = getOpenAIClient();
+    }
+    return openai;
+}
+
+/**
  * Generates token colors for syntax highlighting using OpenAI.
  * @param openai The OpenAI client instance
  * @param promptTemplates The loaded prompt templates

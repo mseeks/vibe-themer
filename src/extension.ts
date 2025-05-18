@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { normalizeHexColor, getContrastColor, adjustColor, isDarkTheme } from './utils/colorUtils';
-import { initializeOpenAIClient, getOpenAIClient, generateTokenColors } from './services/openaiService';
+import { initializeOpenAIClient, getOpenAIClient, generateTokenColors, ensureOpenAIClient } from './services/openaiService';
 import { loadPromptTemplates, PromptTemplates } from './services/promptService';
 import { registerClearApiKeyCommand } from './commands/clearApiKeyCommand';
 import { registerResetThemeCommand } from './commands/resetThemeCommand';
@@ -56,16 +56,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Register command to change theme based on natural language description
     let changeThemeCommand = vscode.commands.registerCommand('dynamicThemeChanger.changeTheme', async () => {
-        // Make sure we have the OpenAI client
+        // Ensure OpenAI client is initialized using the new helper
+        openai = await ensureOpenAIClient(context);
         if (!openai) {
-            vscode.window.showErrorMessage('OpenAI client not initialized. Please ensure API key is set.');
-            // Attempt to re-initialize or prompt for key again
-            const initialized = await initializeOpenAIClient(context);
-            if (!initialized) {
-                return; // Exit if initialization failed
-            }
-            // Get the initialized OpenAI client
-            openai = getOpenAIClient();
+            return;
         }
 
         const themeDescription = await vscode.window.showInputBox({
