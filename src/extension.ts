@@ -6,11 +6,9 @@ import * as path from 'path';
 import * as os from 'os';
 import { normalizeHexColor, getContrastColor, adjustColor, isDarkTheme } from './utils/colorUtils';
 import { initializeOpenAIClient, getOpenAIClient, generateTokenColors, ensureOpenAIClient } from './services/openaiService';
-import { loadPromptTemplates, PromptTemplates } from './services/promptService';
 import { registerClearApiKeyCommand } from './commands/clearApiKeyCommand';
 import { registerResetThemeCommand } from './commands/resetThemeCommand';
 import { registerExportThemeCommand } from './commands/exportThemeCommand';
-import { parseAndNormalizeColorPalette, NormalizedColorPalette } from './utils/colorPaletteParser';
 import { applyThemeCustomizations } from './services/themeService';
 import { runThemeGenerationWorkflow } from './services/themeGenerationService';
 
@@ -36,15 +34,6 @@ let lastGeneratedTheme: ThemeData | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
     console.log('Congratulations, your extension "dynamic-theme-changer" is now active!');
-
-    // Load prompt templates
-    let promptTemplates: PromptTemplates;
-    try {
-        promptTemplates = loadPromptTemplates(context);
-    } catch (error: any) {
-        vscode.window.showErrorMessage(`Error loading prompt templates: ${error.message}`);
-        return; // Deactivate if templates can't be loaded
-    }
 
     // Initialize OpenAI client
     const initialized = await initializeOpenAIClient(context);
