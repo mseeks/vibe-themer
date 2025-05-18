@@ -1,70 +1,74 @@
-# Dynamic Theme Changer
+# VibeThemer
 
-A Visual Studio Code extension that dynamically changes your editor theme based on natural language descriptions using OpenAI.
+A Visual Studio Code extension that uses AI to generate and apply beautiful, cohesive color themes from natural language descriptions. Powered by OpenAI.
+
+---
 
 ## Features
 
-This extension leverages the power of OpenAI's language models to generate custom VS Code themes based on your natural language descriptions. Simply enter a description like "warm sunset" or "ocean blue" and the AI will generate a cohesive color scheme and apply it to your workspace.
-
-Key features include:
-
-- **Natural language theme generation**: Describe the theme you want in plain English
-- **Comprehensive theme application**: Updates multiple UI elements including activity bar, title bar, status bar, editor, sidebar, input fields, terminals, lists/trees, and buttons
-- **Secure API key storage**: Your OpenAI API key is stored securely in VS Code's secret storage
-- **Easy key management**: Commands to store and clear your API key
+- **AI-powered theme generation**: Describe your vibe (e.g., "cozy night", "retro neon", "forest morning") and instantly get a matching color palette for your editor.
+- **Comprehensive theme application**: Updates all major UI elements—activity bar, title bar, status bar, editor, sidebar, input fields, terminals, lists/trees, buttons, and more.
+- **Syntax highlighting**: AI also generates matching syntax token colors for code.
+- **Secure API key storage**: Your OpenAI API key is stored securely in VS Code's secret storage.
+- **Easy key management**: Commands to store, clear, and manage your API key.
+- **Export themes**: Save your generated theme as a JSON file for use in your own VS Code theme extension.
+- **Model selection**: Choose which OpenAI model to use for theme generation.
+- **Reset**: Instantly reset all theme customizations and return to your default theme.
 
 ## Requirements
 
-- A valid OpenAI API key (sign up at [platform.openai.com](https://platform.openai.com/))
+- A valid OpenAI API key ([get one here](https://platform.openai.com/))
 - Visual Studio Code 1.68.0 or higher
+- Internet connection (for OpenAI API access)
 
 ## Getting Started
 
-1. Install the extension from the VS Code marketplace
-2. Run the command "Change Theme Dynamically" from the command palette (Ctrl+Shift+P)
-3. When prompted, enter your OpenAI API key (this is stored securely and only needs to be done once)
-4. Enter a description of the theme you want, like "cyberpunk neon" or "forest green"
-5. Watch as your VS Code theme updates with the AI-generated color scheme
+1. **Install** VibeThemer from the VS Code Marketplace (or sideload this extension).
+2. Run the command **"Change Theme Dynamically"** from the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`).
+3. When prompted, enter your OpenAI API key (stored securely, only needed once).
+4. Enter a description of your desired theme, like `cyberpunk neon`, `autumn dusk`, or `minimal light`.
+5. Watch as your VS Code theme updates with a unique, AI-generated color scheme and syntax highlighting.
 
 ## Extension Commands
 
-This extension contributes the following commands:
-
-* `dynamicThemeChanger.changeTheme`: Prompts for a theme description and changes your theme
-* `dynamicThemeChanger.clearApiKey`: Clears your stored OpenAI API key
-* `dynamicThemeChanger.resetTheme`: Resets all theme customizations to restore default theme behavior
-* `dynamicThemeChanger.exportTheme`: Exports the current theme as a JSON file that can be used in a VS Code theme extension
+| Command                           | Description                                              |
+| --------------------------------- | -------------------------------------------------------- |
+| `dynamicThemeChanger.changeTheme` | Prompts for a theme description and changes your theme   |
+| `dynamicThemeChanger.clearApiKey` | Clears your stored OpenAI API key                        |
+| `dynamicThemeChanger.resetTheme`  | Resets all theme customizations to restore default theme |
+| `dynamicThemeChanger.exportTheme` | Exports the current theme as a JSON file                 |
+| `dynamicThemeChanger.selectModel` | Select which OpenAI model to use                         |
+| `dynamicThemeChanger.resetModel`  | Reset the selected OpenAI model                          |
 
 ## How It Works
 
-When you provide a theme description, the extension:
-
-1. Sends your description to OpenAI's API
-2. Requests a cohesive color palette with 5 colors (primary, secondary, accent, background, foreground)
-3. Parses the AI response into a valid color scheme
-4. Applies these colors to various VS Code UI elements through the `workbench.colorCustomizations` setting
+1. You describe your desired theme in plain English.
+2. The extension sends your description to OpenAI, requesting a palette with 5 colors: primary, secondary, accent, background, foreground.
+3. The AI response is parsed and normalized for VS Code.
+4. The extension applies these colors to all major UI elements and generates syntax highlighting token colors.
+5. You can export your theme for use in your own extension or share it with others.
 
 ## Privacy & Security
 
-- Your OpenAI API key is stored securely in VS Code's built-in secret storage
-- Theme descriptions you enter are sent to OpenAI for processing
-- No other data is collected or transmitted
+- Your OpenAI API key is stored securely in VS Code's built-in secret storage.
+- Theme descriptions are sent to OpenAI for processing. No other data is collected or transmitted.
+- You can clear your API key at any time using the provided command.
 
 ## Known Issues
 
-- The extension requires an internet connection to communicate with the OpenAI API
-- The color scheme quality depends on the clarity of your description and the AI model's interpretation
-- When no workspace is open, the extension will apply theme changes to global user settings instead
+- Requires an internet connection for OpenAI API access.
+- The quality of generated themes depends on the clarity of your description and the AI model's interpretation.
+- When no workspace is open, theme changes apply to global user settings.
 
 ## Release Notes
 
 ### 1.0.0
-
-Initial release of Dynamic Theme Changer with OpenAI integration (May 2025)
-- Change themes using natural language descriptions
-- Secure OpenAI API key storage
-- Multi-color palette generation for comprehensive theme changes
+- Initial release as VibeThemer (formerly Dynamic Theme Changer)
+- AI-powered theme and syntax color generation
+- Secure API key storage and management
+- Theme export and reset functionality
+- OpenAI model selection support
 
 ---
 
-**Enjoy your personalized VS Code themes!**
+**Enjoy your personalized VS Code vibes!**
