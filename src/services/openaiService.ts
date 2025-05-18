@@ -43,3 +43,39 @@ export async function initializeOpenAIClient(context: vscode.ExtensionContext): 
 export function getOpenAIClient(): OpenAI | undefined {
     return openai;
 }
+
+/**
+ * Generates token colors for syntax highlighting using OpenAI.
+ * @param openai The OpenAI client instance
+ * @param promptTemplates The loaded prompt templates
+ * @param palette The normalized color palette
+ * @param themeDescription The theme description
+ * @returns The generated token colors array (or empty array on error)
+ */
+export async function generateTokenColors(
+    openai: any,
+    promptTemplates: { tokenColorsPrompt: string },
+    palette: { primary: string; secondary: string; accent: string; background: string; foreground: string },
+    themeDescription: string
+): Promise<any[]> {
+    try {
+        const tokenCompletion = await openai.chat.completions.create({
+            model: "gpt-4.1-mini",
+            messages: [
+                { role: "system", content: promptTemplates.tokenColorsPrompt },
+                { role: "user", content: `Create syntax highlighting colors based on this theme palette: primary=${palette.primary}, secondary=${palette.secondary}, accent=${palette.accent}, background=${palette.background}, foreground=${palette.foreground}. Theme description: ${themeDescription}` }
+            ],
+            max_completion_tokens: 2000
+        });
+        const tokenColorsResponse = tokenCompletion.choices[0]?.message?.content?.trim();
+        try {
+            return JSON.parse(tokenColorsResponse || '[]');
+        } catch (tokenError: any) {
+            console.error('Token color parsing error:', tokenError);
+            return [];
+        }
+    } catch (error: any) {
+        console.error('OpenAI token color generation error:', error);
+        return [];
+    }
+}

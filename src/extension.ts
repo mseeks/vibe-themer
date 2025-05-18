@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { normalizeHexColor, getContrastColor, adjustColor, isDarkTheme } from './utils/colorUtils';
-import { initializeOpenAIClient, getOpenAIClient } from './services/openaiService';
+import { initializeOpenAIClient, getOpenAIClient, generateTokenColors } from './services/openaiService';
 import { loadPromptTemplates, PromptTemplates } from './services/promptService';
 import { registerClearApiKeyCommand } from './commands/clearApiKeyCommand';
 import { registerResetThemeCommand } from './commands/resetThemeCommand';
@@ -89,7 +89,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     
                     // First create base colors
                     const completion = await openai!.chat.completions.create({
-                        model: "o3",
+                        model: "gpt-4.1-mini",
                         messages: [
                             { role: "system", content: promptTemplates.baseColorsPrompt },
                             { role: "user", content: themeDescription }
@@ -131,31 +131,15 @@ export async function activate(context: vscode.ExtensionContext) {
 
                     progress.report({ message: "Generating syntax highlighting colors..." });
                     
-                    // Now generate token colors for syntax highlighting
-                    const tokenCompletion = await openai!.chat.completions.create({
-                        model: "o3",
-                        messages: [
-                            { role: "system", content: promptTemplates.tokenColorsPrompt },
-                            { role: "user", content: `Create syntax highlighting colors based on this theme palette: primary=${primary}, secondary=${secondary}, accent=${accent}, background=${background}, foreground=${foreground}. Theme description: ${themeDescription}` }
-                        ],
-                        max_completion_tokens: 2000
-                    });
-                    
-                    const tokenColorsResponse = tokenCompletion.choices[0]?.message?.content?.trim();
-                    let tokenColors;
-                    
-                    try {
-                        // Parse the JSON response for token colors
-                        tokenColors = JSON.parse(tokenColorsResponse || '[]');
-                        
-                        // Store token colors in theme data
-                        if (lastGeneratedTheme) {
-                            lastGeneratedTheme.tokenColors = tokenColors;
-                        }
-                    } catch (tokenError: any) {
-                        console.error('Token color parsing error:', tokenError);
-                        vscode.window.showWarningMessage('Could not generate syntax highlighting colors. Using basic theme only.');
-                        tokenColors = [];
+                    // Now generate token colors for syntax highlighting using the new service
+                    const tokenColors = await generateTokenColors(
+                        openai,
+                        promptTemplates,
+                        { primary, secondary, accent, background, foreground },
+                        themeDescription
+                    );
+                    if (lastGeneratedTheme) {
+                        lastGeneratedTheme.tokenColors = tokenColors;
                     }
 
                     // Apply the colors to VS Code theme using the new service
