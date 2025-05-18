@@ -172,6 +172,10 @@ export function registerExportThemeCommand(context: vscode.ExtensionContext, las
                         "tree.indentGuidesStroke": adjustColor(colors.foreground, 0.4),
                         "focusBorder": colors.accent,
                         "foreground": colors.foreground,
+                        // Tooltip/Popup (Hover Widget)
+                        "editorHoverWidget.background": colors.background,
+                        "editorHoverWidget.foreground": colors.foreground,
+                        "editorHoverWidget.border": colors.secondary,
                         "widget.shadow": "#00000030",
                         "selection.background": adjustColor(colors.accent, 0.3),
                     },

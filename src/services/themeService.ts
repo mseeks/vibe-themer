@@ -213,6 +213,10 @@ export async function applyThemeCustomizations(
         "tree.indentGuidesStroke": adjustColor(colors.foreground, 0.4),
         "focusBorder": colors.accent,
         "foreground": colors.foreground,
+        // Tooltip/Popup (Hover Widget)
+        "editorHoverWidget.background": colors.background,
+        "editorHoverWidget.foreground": colors.foreground,
+        "editorHoverWidget.border": colors.secondary,
         "widget.shadow": "#00000030",
         "selection.background": adjustColor(colors.accent, 0.3),
         // Notification colors - duplicated in [*] override at the top
