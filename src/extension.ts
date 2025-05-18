@@ -11,6 +11,7 @@ import { registerResetThemeCommand } from './commands/resetThemeCommand';
 import { registerExportThemeCommand } from './commands/exportThemeCommand';
 import { applyThemeCustomizations } from './services/themeService';
 import { runThemeGenerationWorkflow } from './services/themeGenerationService';
+import { selectOpenAIModel, resetOpenAIModel } from './commands/modelSelectCommand';
 
 // Reference to the OpenAI client instance
 let openai: OpenAI | undefined;
@@ -59,5 +60,17 @@ export async function activate(context: vscode.ExtensionContext) {
     
     // Register command to export the current theme (refactored)
     registerExportThemeCommand(context, { current: lastGeneratedTheme });
+
+    // Register command to select OpenAI model
+    let selectModelCommand = vscode.commands.registerCommand('dynamicThemeChanger.selectModel', async () => {
+        await selectOpenAIModel(context);
+    });
+    context.subscriptions.push(selectModelCommand);
+
+    // Register command to reset OpenAI model selection
+    let resetModelCommand = vscode.commands.registerCommand('dynamicThemeChanger.resetModel', async () => {
+        await resetOpenAIModel(context);
+    });
+    context.subscriptions.push(resetModelCommand);
 }
 

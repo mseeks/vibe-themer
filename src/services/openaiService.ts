@@ -1,6 +1,7 @@
 // OpenAI service for Dynamic Theme Changer
 import * as vscode from 'vscode';
 import OpenAI from 'openai';
+import { getSelectedOpenAIModel } from '../commands/modelSelectCommand';
 
 // Store OpenAI client instance
 let openai: OpenAI | undefined;
@@ -68,17 +69,19 @@ export async function ensureOpenAIClient(context: vscode.ExtensionContext): Prom
  * @param promptTemplates The loaded prompt templates
  * @param palette The normalized color palette
  * @param themeDescription The theme description
+ * @param model The OpenAI model to use (optional)
  * @returns The generated token colors array (or empty array on error)
  */
 export async function generateTokenColors(
     openai: any,
     promptTemplates: { tokenColorsPrompt: string },
     palette: { primary: string; secondary: string; accent: string; background: string; foreground: string },
-    themeDescription: string
+    themeDescription: string,
+    model?: string
 ): Promise<any[]> {
     try {
         const tokenCompletion = await openai.chat.completions.create({
-            model: "gpt-4.1-mini",
+            model: model || "gpt-4.1-mini",
             messages: [
                 { role: "system", content: promptTemplates.tokenColorsPrompt },
                 { role: "user", content: `Create syntax highlighting colors based on this theme palette: primary=${palette.primary}, secondary=${palette.secondary}, accent=${palette.accent}, background=${palette.background}, foreground=${palette.foreground}. Theme description: ${themeDescription}` }

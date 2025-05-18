@@ -3,6 +3,7 @@ import { ensureOpenAIClient, generateTokenColors } from './openaiService';
 import { loadPromptTemplates } from './promptService';
 import { parseAndNormalizeColorPalette, NormalizedColorPalette } from '../utils/colorPaletteParser';
 import { applyThemeCustomizations } from './themeService';
+import { getSelectedOpenAIModel } from '../commands/modelSelectCommand';
 
 /**
  * Orchestrates the theme generation workflow: prompts user, calls OpenAI, parses palette, applies theme.
@@ -33,6 +34,8 @@ export async function runThemeGenerationWorkflow(
         return;
     }
 
+    const selectedModel = getSelectedOpenAIModel(context) || "gpt-4.1-mini";
+
     try {
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -42,7 +45,7 @@ export async function runThemeGenerationWorkflow(
             try {
                 progress.report({ message: "Generating base colors..." });
                 const completion = await openai.chat.completions.create({
-                    model: "gpt-4.1-mini",
+                    model: selectedModel,
                     messages: [
                         { role: "system", content: promptTemplates.baseColorsPrompt },
                         { role: "user", content: themeDescription }
@@ -72,7 +75,8 @@ export async function runThemeGenerationWorkflow(
                     openai,
                     promptTemplates,
                     { primary, secondary, accent, background, foreground },
-                    themeDescription
+                    themeDescription,
+                    selectedModel
                 );
                 lastGeneratedThemeRef.current.tokenColors = tokenColors;
                 await applyThemeCustomizations(
