@@ -11,6 +11,7 @@ import { registerClearApiKeyCommand } from './commands/clearApiKeyCommand';
 import { registerResetThemeCommand } from './commands/resetThemeCommand';
 import { registerExportThemeCommand } from './commands/exportThemeCommand';
 import { parseAndNormalizeColorPalette, NormalizedColorPalette } from './utils/colorPaletteParser';
+import { applyThemeCustomizations } from './services/themeService';
 
 // Reference to the OpenAI client instance
 let openai: OpenAI | undefined;
@@ -112,6 +113,10 @@ export async function activate(context: vscode.ExtensionContext) {
                     const { palette, replaced } = parseAndNormalizeColorPalette(colorResponse || '{}', defaultColors);
                     const { primary, secondary, accent, background, foreground } = palette;
 
+                    console.log('OpenAI color palette (raw):', colorResponse);
+                    console.log('Normalized palette:', palette);
+                    console.log('Background color used for editor:', background);
+
                     if (replaced.length > 0) {
                         console.warn(`Some colors remained invalid after normalization: ${replaced.join(', ')}`);
                         vscode.window.showWarningMessage('Some colors were invalid and have been replaced with fallbacks.');
@@ -153,243 +158,12 @@ export async function activate(context: vscode.ExtensionContext) {
                         tokenColors = [];
                     }
 
-                    // Apply the colors to VS Code theme
-                    const config = vscode.workspace.getConfiguration();
-                    const currentColorCustomizations = config.get('workbench.colorCustomizations') || {};
-                    
-                    const newCustomizations = {
-                        ...currentColorCustomizations,
-                        // Activity Bar
-                        "activityBar.background": primary,
-                        "activityBar.foreground": getContrastColor(primary),
-                        "activityBar.activeForeground": getContrastColor(primary),
-                        "activityBar.inactiveForeground": adjustColor(getContrastColor(primary), 0.6),
-                        "activityBar.activeBorder": accent,
-                        "activityBar.activeBackground": adjustColor(primary, 1.05),
-                        "activityBarBadge.background": accent,
-                        "activityBarBadge.foreground": getContrastColor(accent),
-                        
-                        // Input fields
-                        "input.background": adjustColor(background, 0.95),
-                        "input.foreground": foreground,
-                        "input.border": secondary,
-                        "input.placeholderForeground": adjustColor(foreground, 0.6),
-                        "inputOption.activeBorder": accent,
-                        "inputOption.activeForeground": accent,
-                        "inputOption.activeBackground": adjustColor(background, 0.9),
-                        "inputValidation.errorBackground": "#ff000033",
-                        "inputValidation.errorBorder": "#ff0000",
-                        
-                        // Terminal
-                        "terminal.background": background,
-                        "terminal.foreground": foreground,
-                        "terminalCursor.background": background,
-                        "terminalCursor.foreground": accent,
-                        "terminal.ansiBlack": adjustColor(background, 0.5),
-                        "terminal.ansiBlue": accent,
-                        "terminal.ansiCyan": adjustColor(accent, 1.2),
-                        "terminal.ansiGreen": adjustColor(secondary, 1.3),
-                        "terminal.ansiMagenta": adjustColor(primary, 1.2),
-                        "terminal.ansiRed": "#ff6347",
-                        "terminal.ansiYellow": "#ffd700",
-                        "terminal.ansiWhite": foreground,
-                        "terminal.ansiBrightBlack": adjustColor(background, 0.7),
-                        "terminal.ansiBrightBlue": adjustColor(accent, 1.3),
-                        "terminal.ansiBrightCyan": adjustColor(accent, 1.4),
-                        "terminal.ansiBrightGreen": adjustColor(secondary, 1.5),
-                        "terminal.ansiBrightMagenta": adjustColor(primary, 1.4),
-                        "terminal.ansiBrightRed": "#ff7f50",
-                        "terminal.ansiBrightYellow": "#ffd700",
-                        "terminal.ansiBrightWhite": "#ffffff",
-                        
-                        // Lists and trees
-                        "list.activeSelectionBackground": primary,
-                        "list.activeSelectionForeground": getContrastColor(primary),
-                        "list.hoverBackground": adjustColor(background, 0.95),
-                        "list.hoverForeground": foreground,
-                        "list.inactiveSelectionBackground": adjustColor(primary, 0.7),
-                        "list.inactiveSelectionForeground": getContrastColor(adjustColor(primary, 0.7)),
-                        "list.highlightForeground": accent,
-                        "list.focusHighlightForeground": accent,
-                        "list.focusForeground": getContrastColor(primary),
-                        "list.focusBackground": adjustColor(primary, 0.8),
-                        
-                        // Links - Fix for extension manager and other links
-                        "textLink.foreground": accent,
-                        "textLink.activeForeground": adjustColor(accent, 1.2),
-                        "pickerGroup.foreground": accent,
-                        "pickerGroup.border": secondary,
-                        
-                        // Extension view
-                        "extensionButton.prominentForeground": getContrastColor(accent),
-                        "extensionButton.prominentBackground": accent,
-                        "extensionButton.prominentHoverBackground": adjustColor(accent, 1.1),
-                        "extensionIcon.starForeground": accent,
-                        "extensionIcon.verifiedForeground": accent,
-                        "extensionIcon.preReleaseForeground": adjustColor(accent, 0.8),
-                        "extensionBadge.remoteBackground": primary,
-                        "extensionBadge.remoteForeground": getContrastColor(primary),
-                        
-                        // Search
-                        "searchEditor.findMatchBackground": adjustColor(accent, 0.3),
-                        "searchEditor.findMatchBorder": accent,
-                        "search.resultsInfoForeground": accent,
-                        "search.matchBackground": adjustColor(accent, 0.3),
-                        "search.matchBorder": accent,
-                        "searchMatch.highlight": adjustColor(accent, 0.3),
-                        "editor.findMatchBackground": adjustColor(accent, 0.3),
-                        "editor.findMatchBorder": accent,
-                        "editor.findMatchHighlightBackground": adjustColor(accent, 0.2),
-                        "editor.findRangeHighlightBackground": adjustColor(accent, 0.1),
-                        
-                        // Buttons
-                        "button.background": accent,
-                        "button.foreground": getContrastColor(accent),
-                        "button.hoverBackground": adjustColor(accent, 1.1),
-                        
-                        // Title Bar
-                        "titleBar.activeBackground": primary,
-                        "titleBar.activeForeground": getContrastColor(primary),
-                        "titleBar.inactiveBackground": secondary,
-                        "titleBar.inactiveForeground": getContrastColor(secondary),
-                        
-                        // Status Bar
-                        "statusBar.background": secondary,
-                        "statusBar.foreground": getContrastColor(secondary),
-                        "statusBar.noFolderBackground": accent,
-                        "statusBar.noFolderForeground": getContrastColor(accent),
-                        "statusBarItem.prominentBackground": accent,
-                        "statusBarItem.prominentHoverBackground": accent,
-                        
-                        // Editor
-                        "editor.background": background,
-                        "editor.foreground": foreground,
-                        "editorLineNumber.foreground": adjustColor(foreground, 0.5),
-                        "editorLineNumber.activeForeground": foreground, // Active line number highlighting
-                        "editorCursor.foreground": accent,
-                        "editor.selectionBackground": adjustColor(accent, 0.3),
-                        "editor.selectionHighlightBackground": adjustColor(accent, 0.15),
-                        "editor.lineHighlightBackground": adjustColor(background, background === "#ffffff" ? 0.95 : 1.1), // Line highlight
-                        "editor.lineHighlightBorder": "transparent",
-                        "editorGutter.background": adjustColor(background, 0.98), // Gutter background
-                        "editorGutter.modifiedBackground": adjustColor(accent, 0.8),
-                        "editorGutter.addedBackground": adjustColor(secondary, 1.3),
-                        "editorGutter.deletedBackground": "#ff6347",
-                        "editorSuggestWidget.background": background,
-                        "editorSuggestWidget.foreground": foreground,
-                        "editorSuggestWidget.highlightForeground": accent,
-                        "editorSuggestWidget.selectedBackground": adjustColor(accent, 0.2),
-                        
-                        // Editor Tabs and Groups
-                        "editorGroupHeader.tabsBackground": adjustColor(background, 0.9),
-                        "tab.activeBackground": background,
-                        "tab.activeForeground": accent,
-                        "tab.activeBorderTop": accent,
-                        "tab.inactiveBackground": adjustColor(background, 0.8),
-                        "tab.inactiveForeground": adjustColor(foreground, 0.6),
-                        
-                        // Sidebar
-                        "sideBar.background": background,
-                        "sideBar.foreground": foreground,
-                        "sideBar.border": secondary,
-                        "sideBarTitle.foreground": accent,
-                        "sideBarSectionHeader.background": adjustColor(background, 0.9),
-                        "sideBarSectionHeader.foreground": accent,
-                        
-                        // Breadcrumbs
-                        "breadcrumb.foreground": foreground,
-                        "breadcrumb.focusForeground": accent,
-                        "breadcrumb.activeSelectionForeground": accent,
-                        
-                        // Scrollbar
-                        "scrollbarSlider.background": adjustColor(primary, 0.3),
-                        "scrollbarSlider.hoverBackground": adjustColor(primary, 0.4),
-                        "scrollbarSlider.activeBackground": adjustColor(primary, 0.6),
-                        
-                        // Panel
-                        "panel.background": background,
-                        "panel.border": secondary,
-                        "panelTitle.activeForeground": accent,
-                        "panelTitle.inactiveForeground": adjustColor(foreground, 0.6),
-                        
-                        // Quick Pick (Command Palette)
-                        "quickInput.background": background,
-                        "quickInput.foreground": foreground,
-                        "quickInputTitle.background": adjustColor(background, 0.9),
-                        "quickInputList.focusBackground": primary,
-                        "quickInputList.focusForeground": getContrastColor(primary),
-                        
-                        // Settings UI
-                        "settings.headerForeground": accent,
-                        "settings.modifiedItemIndicator": accent,
-                        "settings.dropdownBackground": background,
-                        "settings.dropdownForeground": foreground,
-                        "settings.dropdownBorder": secondary,
-                        "settings.checkboxBackground": background,
-                        "settings.checkboxForeground": foreground,
-                        "settings.checkboxBorder": secondary,
-                        "settings.textInputBackground": background,
-                        "settings.textInputForeground": foreground,
-                        "settings.textInputBorder": secondary,
-                        "settings.numberInputBackground": background,
-                        "settings.numberInputForeground": foreground,
-                        "settings.numberInputBorder": secondary,
-                        
-                        // Tree View (File Explorer, etc.)
-                        "tree.indentGuidesStroke": adjustColor(foreground, 0.4),
-                        "focusBorder": accent,
-                        "foreground": foreground,
-                        "widget.shadow": "#00000030",
-                        "selection.background": adjustColor(accent, 0.3),
-                    };
-                    
-                    // Choose appropriate configuration target based on whether a workspace is open
-                    const configTarget = vscode.workspace.workspaceFolders 
-                        ? vscode.ConfigurationTarget.Workspace 
-                        : vscode.ConfigurationTarget.Global;
-
-                    try {
-                        await config.update('workbench.colorCustomizations', newCustomizations, configTarget);
-                        
-                        // Apply token color customizations
-                        if (tokenColors && tokenColors.length > 0) {
-                            const currentTokenColorCustomizations = config.get('editor.tokenColorCustomizations') || {};
-                            
-                            // Create the updated token color customizations
-                            const newTokenColorCustomizations = {
-                                ...currentTokenColorCustomizations,
-                                "textMateRules": tokenColors
-                            };
-                            
-                            await config.update('editor.tokenColorCustomizations', newTokenColorCustomizations, configTarget);
-                            vscode.window.showInformationMessage(`Theme updated with syntax highlighting based on: "${themeDescription}"`);
-                        } else {
-                            vscode.window.showInformationMessage(`Theme updated based on: "${themeDescription}"`);
-                        }
-                    } catch (updateError) {
-                        // If updating workspace settings fails, try user settings
-                        if (configTarget === vscode.ConfigurationTarget.Workspace) {
-                            try {
-                                await config.update('workbench.colorCustomizations', newCustomizations, vscode.ConfigurationTarget.Global);
-                                
-                                // Also update token colors at global level
-                                if (tokenColors && tokenColors.length > 0) {
-                                    const currentTokenColorCustomizations = config.get('editor.tokenColorCustomizations') || {};
-                                    const newTokenColorCustomizations = {
-                                        ...currentTokenColorCustomizations,
-                                        "textMateRules": tokenColors
-                                    };
-                                    await config.update('editor.tokenColorCustomizations', newTokenColorCustomizations, vscode.ConfigurationTarget.Global);
-                                }
-                                
-                                vscode.window.showInformationMessage(`Theme updated in user settings based on: "${themeDescription}"`);
-                            } catch (globalError: any) {
-                                throw new Error(`Failed to update settings: ${globalError.message}`);
-                            }
-                        } else {
-                            throw updateError;
-                        }
-                    }
+                    // Apply the colors to VS Code theme using the new service
+                    await applyThemeCustomizations(
+                        { primary, secondary, accent, background, foreground },
+                        tokenColors,
+                        themeDescription
+                    );
                 } catch (error: any) {
                     console.error('Color parsing error:', error);
                     vscode.window.showErrorMessage(`Could not generate a valid color theme. Error: ${error.message}`);
