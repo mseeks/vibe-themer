@@ -1,4 +1,9 @@
-import { getContrastColor, adjustColor } from '../utils/colorUtils';
+import { getContrastColor, adjustColor, isDarkTheme } from '../utils/colorUtils';
+import * as vscode from 'vscode';
+import { forceNotificationStyleRefresh } from './notificationService';
+
+/**
+ * Applies the given theme colors and token colors to VS Code settings.t { getContrastColor, adjustColor } from '../utils/colorUtils';
 import * as vscode from 'vscode';
 
 /**
@@ -13,6 +18,27 @@ export async function applyThemeCustomizations(
     themeDescription: string
 ) {
     const config = vscode.workspace.getConfiguration();
+    
+    // Reset theme customizations first to avoid conflicts
+    const allThemesNotificationOverride = {
+        "[*]": {
+            "notification.background": colors.background,
+            "notification.foreground": colors.foreground,
+            "notification.buttonBackground": colors.accent,
+            "notification.buttonForeground": getContrastColor(colors.accent),
+            "notification.buttonHoverBackground": adjustColor(colors.accent, 1.1),
+            "notification.infoBackground": adjustColor(colors.background, 1.05),
+            "notification.infoForeground": colors.foreground,
+            "notification.warningBackground": adjustColor(colors.accent, 0.9),
+            "notification.warningForeground": getContrastColor(adjustColor(colors.accent, 0.9)),
+            "notification.errorBackground": "#ff6347",
+            "notification.errorForeground": "#ffffff"
+        }
+    };
+    
+    // Apply the [*] notification override first
+    await config.update('workbench.colorCustomizations', allThemesNotificationOverride, vscode.ConfigurationTarget.Global);
+    
     const currentColorCustomizations = config.get('workbench.colorCustomizations') || {};
     const newCustomizations = {
         ...currentColorCustomizations,
@@ -180,22 +206,92 @@ export async function applyThemeCustomizations(
         "foreground": colors.foreground,
         "widget.shadow": "#00000030",
         "selection.background": adjustColor(colors.accent, 0.3),
+        // Notification colors - duplicated in [*] override at the top
+        "notification.background": colors.background,
+        "notification.foreground": colors.foreground,
+        "notification.buttonBackground": colors.accent,
+        "notification.buttonForeground": getContrastColor(colors.accent),
+        "notification.buttonHoverBackground": adjustColor(colors.accent, 1.1),
+        "notification.infoBackground": adjustColor(colors.background, 1.05),
+        "notification.infoForeground": colors.foreground,
+        "notification.warningBackground": adjustColor(colors.accent, 0.9),
+        "notification.warningForeground": getContrastColor(adjustColor(colors.accent, 0.9)),
+        "notification.errorBackground": "#ff6347",
+        "notification.errorForeground": "#ffffff",
+        
+        // Ensure notification center colors also match
+        "notificationCenter.border": colors.secondary,
+        "notificationCenterHeader.foreground": getContrastColor(colors.secondary),
+        "notificationCenterHeader.background": colors.secondary,
+        "notificationToast.border": colors.secondary,
+        "notifications.foreground": colors.foreground,
+        "notifications.background": colors.background,
+        "notifications.border": colors.secondary,
     };
     const configTarget = vscode.workspace.workspaceFolders 
         ? vscode.ConfigurationTarget.Workspace 
         : vscode.ConfigurationTarget.Global;
     try {
-        await config.update('workbench.colorCustomizations', newCustomizations, configTarget);
+        // Force Global settings first
+        await config.update('workbench.colorCustomizations', newCustomizations, vscode.ConfigurationTarget.Global);
+        
+        // Also apply to workspace if it exists
+        if (vscode.workspace.workspaceFolders) {
+            await config.update('workbench.colorCustomizations', newCustomizations, vscode.ConfigurationTarget.Workspace);
+        }
+        
         if (tokenColors && tokenColors.length > 0) {
             const currentTokenColorCustomizations = config.get('editor.tokenColorCustomizations') || {};
             const newTokenColorCustomizations = {
                 ...currentTokenColorCustomizations,
                 "textMateRules": tokenColors
             };
-            await config.update('editor.tokenColorCustomizations', newTokenColorCustomizations, configTarget);
-            vscode.window.showInformationMessage(`Theme updated with syntax highlighting based on: "${themeDescription}"`);
+            await config.update('editor.tokenColorCustomizations', newTokenColorCustomizations, vscode.ConfigurationTarget.Global);
+            if (vscode.workspace.workspaceFolders) {
+                await config.update('editor.tokenColorCustomizations', newTokenColorCustomizations, vscode.ConfigurationTarget.Workspace);
+            }
+            
+            // Force refresh the notification styles
+            forceNotificationStyleRefresh();
+            
+            // Show a test notification with the new colors
+            setTimeout(() => {
+                const testNotification = vscode.window.showInformationMessage(
+                    `Theme updated with syntax highlighting based on: "${themeDescription}"`,
+                    { modal: false },
+                    'Reload Window',
+                    'Test Notification'
+                ).then(selection => {
+                    if (selection === 'Reload Window') {
+                        vscode.commands.executeCommand('workbench.action.reloadWindow');
+                    } else if (selection === 'Test Notification') {
+                        // Show additional notifications to test styling
+                        vscode.window.showWarningMessage(`This is a test warning notification using theme colors`);
+                        vscode.window.showErrorMessage(`This is a test error notification using theme colors`);
+                    }
+                });
+            }, 1000);
         } else {
-            vscode.window.showInformationMessage(`Theme updated based on: "${themeDescription}"`);
+            // Force refresh the notification styles
+            forceNotificationStyleRefresh();
+            
+            // Show a test notification with the new colors
+            setTimeout(() => {
+                const testNotification = vscode.window.showInformationMessage(
+                    `Theme updated based on: "${themeDescription}"`,
+                    { modal: false },
+                    'Reload Window',
+                    'Test Notification'
+                ).then(selection => {
+                    if (selection === 'Reload Window') {
+                        vscode.commands.executeCommand('workbench.action.reloadWindow');
+                    } else if (selection === 'Test Notification') {
+                        // Show additional notifications to test styling
+                        vscode.window.showWarningMessage(`This is a test warning notification using theme colors`);
+                        vscode.window.showErrorMessage(`This is a test error notification using theme colors`);
+                    }
+                });
+            }, 1000);
         }
     } catch (updateError) {
         // If updating workspace settings fails, try user settings
