@@ -4,6 +4,10 @@ import { loadPromptTemplates } from './promptService';
 import { parseAndNormalizeColorPalette, NormalizedColorPalette } from '../utils/colorPaletteParser';
 import { applyThemeCustomizations } from './themeService';
 import { getSelectedOpenAIModel } from '../commands/modelSelectCommand';
+import { zodResponseFormat } from "openai/helpers/zod";
+import { colorCustomizationsSchema } from "../utils/colorCustomizationsSchema";
+import * as fs from "fs";
+import * as path from "path";
 
 /**
  * Orchestrates the theme generation workflow: prompts user, calls OpenAI, parses palette, applies theme.
@@ -43,16 +47,16 @@ export async function runThemeGenerationWorkflow(
             cancellable: false
         }, async (progress) => {
             try {
+                // Generate base palette first (for LLM context)
                 progress.report({ message: "Generating base colors..." });
-                const completion = await openai.chat.completions.create({
+                const basePaletteCompletion = await openai.chat.completions.create({
                     model: selectedModel,
                     messages: [
                         { role: "system", content: promptTemplates.baseColorsPrompt },
                         { role: "user", content: themeDescription }
-                    ],
-                    max_completion_tokens: 2000
+                    ]
                 });
-                const colorResponse = completion.choices[0]?.message?.content?.trim();
+                const colorResponse = basePaletteCompletion.choices[0]?.message?.content?.trim();
                 const defaultColors: NormalizedColorPalette = {
                     primary: '#007acc',
                     secondary: '#444444',
@@ -70,6 +74,34 @@ export async function runThemeGenerationWorkflow(
                     description: `Theme generated from: "${themeDescription}"`,
                     colors: { primary, secondary, accent, background, foreground }
                 };
+
+                // Generate full color customizations using LLM and zod schema
+                progress.report({ message: "Generating full theme color customizations..." });
+                const colorCustomizationsPrompt = fs.readFileSync(
+                    path.join(context.extensionUri.fsPath, 'src', 'prompts', 'colorCustomizationsPrompt.txt'),
+                    'utf8'
+                );
+                const completion = await openai.beta.chat.completions.parse({
+                    model: selectedModel,
+                    messages: [
+                        { role: "system", content: colorCustomizationsPrompt },
+                        { role: "user", content: `Theme description: ${themeDescription}\nBase palette: ${JSON.stringify(palette)}` }
+                    ],
+                    response_format: zodResponseFormat(colorCustomizationsSchema, "colorCustomizations")
+                });
+                const colorCustomizationsResult = completion.choices[0].message.parsed;
+                if (!colorCustomizationsResult || !Array.isArray(colorCustomizationsResult.colors)) {
+                    throw new Error('Failed to generate color customizations from LLM.');
+                }
+                // Convert array of {selector, color} to dictionary
+                const colorCustomizations: Record<string, string> = {};
+                for (const entry of colorCustomizationsResult.colors) {
+                    if (entry.selector && entry.color) {
+                        colorCustomizations[entry.selector] = entry.color;
+                    }
+                }
+
+                // Generate token colors as before
                 progress.report({ message: "Generating syntax highlighting colors..." });
                 const tokenColors = await generateTokenColors(
                     openai,
@@ -80,7 +112,7 @@ export async function runThemeGenerationWorkflow(
                 );
                 lastGeneratedThemeRef.current.tokenColors = tokenColors;
                 await applyThemeCustomizations(
-                    { primary, secondary, accent, background, foreground },
+                    colorCustomizations,
                     tokenColors,
                     themeDescription
                 );
