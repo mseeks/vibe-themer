@@ -1,12 +1,12 @@
 {
-  "name": "dynamic-theme-changer",
-  "displayName": "Dynamic Theme Changer",
+  "name": "vibethemer",
+  "displayName": "VibeThemer",
   "description": "Dynamically changes the theme based on user input using OpenAI.",
   "version": "1.0.0",
   "publisher": "vscodethemer",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vscode-extensions/dynamic-theme-changer"
+    "url": "https://github.com/vscode-extensions/vibethemer"
   },
   "engines": {
     "vscode": "^1.68.0"
@@ -35,27 +35,27 @@
     "commands": [
       {
         "command": "dynamicThemeChanger.changeTheme",
-        "title": "Change Theme Dynamically"
+        "title": "VibeThemer: Change Theme"
       },
       {
         "command": "dynamicThemeChanger.clearApiKey",
-        "title": "Clear OpenAI API Key"
+        "title": "VibeThemer: Clear OpenAI API Key"
       },
       {
         "command": "dynamicThemeChanger.resetTheme",
-        "title": "Reset Theme Customizations"
+        "title": "VibeThemer: Reset Theme Customizations"
       },
       {
         "command": "dynamicThemeChanger.exportTheme",
-        "title": "Export Current Theme"
+        "title": "VibeThemer: Export Current Theme"
       },
       {
         "command": "dynamicThemeChanger.selectModel",
-        "title": "Select OpenAI Model"
+        "title": "VibeThemer: Select OpenAI Model"
       },
       {
         "command": "dynamicThemeChanger.resetModel",
-        "title": "Reset OpenAI Model Selection"
+        "title": "VibeThemer: Reset OpenAI Model Selection"
       }
     ]
   },
