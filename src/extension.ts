@@ -1,15 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 import * as vscode from 'vscode';
 import OpenAI from 'openai';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import { normalizeHexColor, getContrastColor, adjustColor, isDarkTheme } from './utils/colorUtils';
-import { initializeOpenAIClient, getOpenAIClient, generateTokenColors, ensureOpenAIClient } from './services/openaiService';
+import { initializeOpenAIClient, getOpenAIClient } from './services/openaiService';
 import { registerClearApiKeyCommand } from './commands/clearApiKeyCommand';
 import { registerResetThemeCommand } from './commands/resetThemeCommand';
 import { registerExportThemeCommand } from './commands/exportThemeCommand';
-import { applyThemeCustomizations } from './services/themeService';
 import { runThemeGenerationWorkflow } from './services/themeGenerationService';
 import { selectOpenAIModel, resetOpenAIModel } from './commands/modelSelectCommand';
 
