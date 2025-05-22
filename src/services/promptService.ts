@@ -7,8 +7,7 @@ import * as path from 'path';
  * Interface for storing prompt templates
  */
 export interface PromptTemplates {
-    baseColorsPrompt: string;
-    tokenColorsPrompt: string;
+    combinedThemePrompt: string;
 }
 
 /**
@@ -20,12 +19,10 @@ export function loadPromptTemplates(context: vscode.ExtensionContext): PromptTem
     try {
         // Use extensionUri.fsPath to locate prompts in src/prompts at runtime
         const promptsDir = path.join(context.extensionUri.fsPath, 'src', 'prompts');
-        const baseColorsPrompt = fs.readFileSync(path.join(promptsDir, 'baseColorsPrompt.txt'), 'utf8');
-        const tokenColorsPrompt = fs.readFileSync(path.join(promptsDir, 'tokenColorsPrompt.txt'), 'utf8');
+        const combinedThemePrompt = fs.readFileSync(path.join(promptsDir, 'combinedThemePrompt.txt'), 'utf8');
         
         return {
-            baseColorsPrompt,
-            tokenColorsPrompt
+            combinedThemePrompt
         };
     } catch (error: any) {
         console.error('Error loading prompt templates:', error);

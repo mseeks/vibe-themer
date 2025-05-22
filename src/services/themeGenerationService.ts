@@ -1,16 +1,12 @@
 import * as vscode from 'vscode';
-import { ensureOpenAIClient, generateTokenColors } from './openaiService';
-import { loadPromptTemplates } from './promptService';
-import { parseAndNormalizeColorPalette, NormalizedColorPalette } from '../utils/colorPaletteParser';
+import { ensureOpenAIClient } from './openaiService';
 import { applyThemeCustomizations } from './themeService';
 import { getSelectedOpenAIModel } from '../commands/modelSelectCommand';
-import { zodResponseFormat } from "openai/helpers/zod";
-import { colorCustomizationsSchema } from "../utils/colorCustomizationsSchema";
 import * as fs from "fs";
 import * as path from "path";
 
 /**
- * Orchestrates the theme generation workflow: prompts user, calls OpenAI, parses palette, applies theme.
+ * Orchestrates the theme generation workflow: prompts user, calls OpenAI, parses response, applies theme.
  * Handles all progress, error, and user messaging.
  * Updates the lastGeneratedThemeRef with the new theme.
  */
@@ -20,14 +16,6 @@ export async function runThemeGenerationWorkflow(
 ) {
     const openai = await ensureOpenAIClient(context);
     if (!openai) return;
-
-    let promptTemplates;
-    try {
-        promptTemplates = loadPromptTemplates(context);
-    } catch (error: any) {
-        vscode.window.showErrorMessage(`Error loading prompt templates: ${error.message}`);
-        return;
-    }
 
     const themeDescription = await vscode.window.showInputBox({
         prompt: 'Describe the theme you want (e.g., "warm and cozy", "futuristic dark blue")',
@@ -47,72 +35,51 @@ export async function runThemeGenerationWorkflow(
             cancellable: false
         }, async (progress) => {
             try {
-                // Generate base palette first (for LLM context)
-                progress.report({ message: "Generating base colors..." });
-                const basePaletteCompletion = await openai.chat.completions.create({
+                progress.report({ message: "Generating selectors and token colors..." });
+                const combinedPrompt = fs.readFileSync(
+                    path.join(context.extensionUri.fsPath, 'src', 'prompts', 'combinedThemePrompt.txt'),
+                    'utf8'
+                );
+                const completion = await openai.chat.completions.create({
                     model: selectedModel,
                     messages: [
-                        { role: "system", content: promptTemplates.baseColorsPrompt },
-                        { role: "user", content: themeDescription }
+                        { role: "system", content: combinedPrompt },
+                        { role: "user", content: `Theme description: ${themeDescription}` }
                     ]
                 });
-                const colorResponse = basePaletteCompletion.choices[0]?.message?.content?.trim();
-                const defaultColors: NormalizedColorPalette = {
-                    primary: '#007acc',
-                    secondary: '#444444',
-                    accent: '#ff8c00',
-                    background: '#1e1e1e',
-                    foreground: '#d4d4d4'
-                };
-                const { palette, replaced } = parseAndNormalizeColorPalette(colorResponse || '{}', defaultColors);
-                const { primary, secondary, accent, background, foreground } = palette;
-                if (replaced.length > 0) {
-                    vscode.window.showWarningMessage('Some colors were invalid and have been replaced with fallbacks.');
+                const responseText = completion.choices[0]?.message?.content?.trim();
+                if (!responseText) throw new Error('No response from LLM.');
+                let parsed;
+                try {
+                    parsed = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error('Failed to parse LLM response as JSON.');
                 }
+                // Validate selectors
+                const selectors = parsed.selectors;
+                if (!selectors || typeof selectors !== 'object') {
+                    throw new Error('Selector color mapping missing or invalid in LLM response.');
+                }
+                // Validate tokenColors
+                const tokenColors = Array.isArray(parsed.tokenColors) ? parsed.tokenColors : [];
+                
+                // Extract core colors from selectors for theme data structure
+                const coreColors = {
+                    primary: selectors["activityBar.background"] || "#007acc",
+                    secondary: selectors["statusBar.background"] || "#444444",
+                    accent: selectors["activityBarBadge.background"] || "#ff8c00",
+                    background: selectors["editor.background"] || "#1e1e1e",
+                    foreground: selectors["editor.foreground"] || "#d4d4d4"
+                };
+                
                 lastGeneratedThemeRef.current = {
                     name: `Custom Theme - ${themeDescription}`,
                     description: `Theme generated from: "${themeDescription}"`,
-                    colors: { primary, secondary, accent, background, foreground }
+                    colors: coreColors,
+                    tokenColors
                 };
-
-                // Generate full color customizations using LLM and zod schema
-                progress.report({ message: "Generating full theme color customizations..." });
-                const colorCustomizationsPrompt = fs.readFileSync(
-                    path.join(context.extensionUri.fsPath, 'src', 'prompts', 'colorCustomizationsPrompt.txt'),
-                    'utf8'
-                );
-                const completion = await openai.beta.chat.completions.parse({
-                    model: selectedModel,
-                    messages: [
-                        { role: "system", content: colorCustomizationsPrompt },
-                        { role: "user", content: `Theme description: ${themeDescription}\nBase palette: ${JSON.stringify(palette)}` }
-                    ],
-                    response_format: zodResponseFormat(colorCustomizationsSchema, "colorCustomizations")
-                });
-                const colorCustomizationsResult = completion.choices[0].message.parsed;
-                if (!colorCustomizationsResult || !Array.isArray(colorCustomizationsResult.colors)) {
-                    throw new Error('Failed to generate color customizations from LLM.');
-                }
-                // Convert array of {selector, color} to dictionary
-                const colorCustomizations: Record<string, string> = {};
-                for (const entry of colorCustomizationsResult.colors) {
-                    if (entry.selector && entry.color) {
-                        colorCustomizations[entry.selector] = entry.color;
-                    }
-                }
-
-                // Generate token colors as before
-                progress.report({ message: "Generating syntax highlighting colors..." });
-                const tokenColors = await generateTokenColors(
-                    openai,
-                    promptTemplates,
-                    { primary, secondary, accent, background, foreground },
-                    themeDescription,
-                    selectedModel
-                );
-                lastGeneratedThemeRef.current.tokenColors = tokenColors;
                 await applyThemeCustomizations(
-                    colorCustomizations,
+                    selectors,
                     tokenColors,
                     themeDescription
                 );
