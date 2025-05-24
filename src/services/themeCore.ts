@@ -87,9 +87,19 @@ export const validateThemeCustomizations = (
         };
     }
 
-    // Validate color format (basic hex validation)
+    // Validate color format (supports 3, 6, and 8-digit hex codes, plus alpha transparency)
     const invalidColors = Object.entries(customizations.colorCustomizations)
-        .filter(([_, color]) => typeof color !== 'string' || !color.match(/^#[0-9a-fA-F]{6}$/))
+        .filter(([_, color]) => {
+            if (typeof color !== 'string') return true;
+            
+            // Allow 3-digit (#rgb), 6-digit (#rrggbb), and 8-digit (#rrggbbaa) hex codes
+            // Also allow CSS color keywords like 'transparent'
+            const hexPattern = /^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$|^#[0-9a-fA-F]{8}$/;
+            const isValidHex = hexPattern.test(color);
+            const isValidKeyword = ['transparent', 'inherit', 'initial', 'unset'].includes(color.toLowerCase());
+            
+            return !isValidHex && !isValidKeyword;
+        })
         .map(([key, _]) => key);
 
     if (invalidColors.length > 0) {
@@ -97,7 +107,7 @@ export const validateThemeCustomizations = (
             success: false,
             error: createThemeApplicationError(
                 `Invalid color format for: ${invalidColors.join(', ')}`,
-                new Error('Colors must be valid 6-digit hex codes'),
+                new Error('Colors must be valid hex codes (#rgb, #rrggbb, #rrggbbaa) or CSS color keywords'),
                 false,
                 'Use the color normalization utilities'
             )

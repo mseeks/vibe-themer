@@ -203,3 +203,38 @@ export const demonstrateValidationAndErrorHandling = async (): Promise<void> => 
         console.log(`- Suggested action: ${result.error.suggestedAction}`);
     }
 };
+
+/**
+ * Example demonstrating support for alpha transparency colors.
+ */
+export const demonstrateAlphaTransparencySupport = async (): Promise<void> => {
+    // Valid theme with alpha transparency colors (the ones that were causing the error)
+    const alphaTheme = {
+        "diffEditor.insertedTextBackground": "#00ff0020",     // 8-digit with alpha
+        "diffEditor.removedTextBackground": "#ff000020",      // 8-digit with alpha
+        "scrollbar.shadow": "#00000080",                      // 8-digit with alpha
+        "scrollbarSlider.background": "#ffffff40",            // 8-digit with alpha
+        "scrollbarSlider.hoverBackground": "#ffffff60",       // 8-digit with alpha
+        "scrollbarSlider.activeBackground": "#ffffff80",      // 8-digit with alpha
+        "widget.shadow": "#00000030",                         // 8-digit with alpha
+        "editor.background": "#f00",                          // 3-digit shorthand
+        "editor.foreground": "#ffffff",                       // 6-digit standard
+        "statusBar.background": "transparent"                 // CSS keyword
+    };
+
+    const result = await applyThemeCustomizations(
+        alphaTheme,
+        [],
+        "Alpha Transparency Theme Test"
+    );
+
+    if (result.success) {
+        console.log("✅ Alpha transparency colors validation passed!");
+        console.log(`- Applied to scope: ${result.appliedScope.type}`);
+    } else {
+        console.log("❌ Alpha transparency colors validation failed:");
+        console.log(`- Error: ${result.error.message}`);
+        console.log(`- Recoverable: ${result.error.recoverable}`);
+        console.log(`- Suggested action: ${result.error.suggestedAction}`);
+    }
+};
