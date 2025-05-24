@@ -108,9 +108,6 @@ export async function runThemeGenerationWorkflow(
             }
         });
         
-        // Show success notification outside of withProgress to ensure proper dismissal
-        vscode.window.showInformationMessage(`Theme "${themeDescription}" applied successfully!`);
-        
     } catch (error: any) {
         // Handle both communication errors and theme generation/application errors
         const isNetworkError = error.message.includes('fetch') || error.message.includes('network') || error.message.includes('connection');
