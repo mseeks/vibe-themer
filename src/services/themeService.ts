@@ -1,97 +1,47 @@
-import { getContrastColor, adjustColor, isDarkTheme } from '../utils/colorUtils';
-import * as vscode from 'vscode';
-import { forceNotificationStyleRefresh } from './notificationService';
+/**
+ * Theme Service - Elegant orchestration of VS Code theme customization.
+ * 
+ * This module provides a refined interface for applying theme customizations to VS Code.
+ * It embodies functional programming principles with domain-driven design, creating
+ * a beautiful separation between business logic and infrastructure concerns.
+ * 
+ * Design Philosophy:
+ * - Pure functions for domain logic, side effects isolated to adapters
+ * - Rich type system that makes invalid states unrepresentable  
+ * - Functional composition over imperative control flow
+ * - Explicit error handling with structured failure information
+ * - Dependency injection for testability and flexibility
+ */
+
+import { applyThemeCustomizationsLegacy } from './themeApplication';
 
 /**
- * Applies the given theme color customizations and token colors to VS Code settings.
- * @param colorCustomizations The full color customizations object (from LLM/json_schema)
- * @param tokenColors The token color rules (optional)
- * @param themeDescription The theme description (for notifications)
+ * Applies theme customizations with comprehensive error handling and user feedback.
+ * 
+ * This is the main public API that maintains backward compatibility while leveraging
+ * our new functional architecture under the hood. The function transforms the legacy
+ * interface into our refined domain model and delegates to the pure business logic.
+ * 
+ * @param colorCustomizations - VS Code color selector mappings (e.g., "editor.background": "#1e1e1e")
+ * @param tokenColors - Syntax highlighting rules for TextMate scopes
+ * @param themeDescription - Human-readable description for user feedback
+ * 
+ * @throws Error when theme application fails and cannot be recovered
+ * 
+ * @example
+ * ```typescript
+ * await applyThemeCustomizations(
+ *   { "editor.background": "#1e1e1e", "editor.foreground": "#d4d4d4" },
+ *   [{ scope: "comment", settings: { foreground: "#6a9955", fontStyle: "italic" } }],
+ *   "Dark Professional Theme"
+ * );
+ * ```
  */
 export async function applyThemeCustomizations(
     colorCustomizations: Record<string, string>,
     tokenColors: any[] | undefined,
     themeDescription: string
-) {
-    const config = vscode.workspace.getConfiguration();
-
-    // Optionally, you can still set notification overrides if needed
-    // (or remove this block if all notification colors are in colorCustomizations)
-    // const allThemesNotificationOverride = {
-    //     "[*]": {
-    //         "notification.background": colorCustomizations["notification.background"],
-    //         "notification.foreground": colorCustomizations["notification.foreground"],
-    //         "notification.buttonBackground": colorCustomizations["button.background"],
-    //         "notification.buttonForeground": colorCustomizations["button.foreground"],
-    //         // ...add more if needed
-    //     }
-    // };
-    // await config.update('workbench.colorCustomizations', allThemesNotificationOverride, vscode.ConfigurationTarget.Global);
-
-    const configTarget = vscode.workspace.workspaceFolders 
-        ? vscode.ConfigurationTarget.Workspace 
-        : vscode.ConfigurationTarget.Global;
-    try {
-        // Apply color customizations globally
-        await config.update('workbench.colorCustomizations', colorCustomizations, vscode.ConfigurationTarget.Global);
-
-        // Also apply to workspace if it exists
-        if (vscode.workspace.workspaceFolders) {
-            await config.update('workbench.colorCustomizations', colorCustomizations, vscode.ConfigurationTarget.Workspace);
-        }
-
-        if (tokenColors && tokenColors.length > 0) {
-            const currentTokenColorCustomizations = config.get('editor.tokenColorCustomizations') || {};
-            const newTokenColorCustomizations = {
-                ...currentTokenColorCustomizations,
-                "textMateRules": tokenColors
-            };
-            await config.update('editor.tokenColorCustomizations', newTokenColorCustomizations, vscode.ConfigurationTarget.Global);
-            if (vscode.workspace.workspaceFolders) {
-                await config.update('editor.tokenColorCustomizations', newTokenColorCustomizations, vscode.ConfigurationTarget.Workspace);
-            }
-        }
-
-        // Force refresh the notification styles
-        forceNotificationStyleRefresh();
-
-        // Show a test notification with the new colors
-        setTimeout(() => {
-            const testNotification = vscode.window.showInformationMessage(
-                tokenColors && tokenColors.length > 0
-                    ? `Theme updated with syntax highlighting based on: "${themeDescription}"`
-                    : `Theme updated based on: "${themeDescription}"`,
-                { modal: false },
-                'Reload Window',
-                'Test Notification'
-            ).then(selection => {
-                if (selection === 'Reload Window') {
-                    vscode.commands.executeCommand('workbench.action.reloadWindow');
-                } else if (selection === 'Test Notification') {
-                    vscode.window.showWarningMessage(`This is a test warning notification using theme colors`);
-                    vscode.window.showErrorMessage(`This is a test error notification using theme colors`);
-                }
-            });
-        }, 1000);
-    } catch (updateError) {
-        // If updating workspace settings fails, try user settings
-        if (configTarget === vscode.ConfigurationTarget.Workspace) {
-            try {
-                await config.update('workbench.colorCustomizations', colorCustomizations, vscode.ConfigurationTarget.Global);
-                if (tokenColors && tokenColors.length > 0) {
-                    const currentTokenColorCustomizations = config.get('editor.tokenColorCustomizations') || {};
-                    const newTokenColorCustomizations = {
-                        ...currentTokenColorCustomizations,
-                        "textMateRules": tokenColors
-                    };
-                    await config.update('editor.tokenColorCustomizations', newTokenColorCustomizations, vscode.ConfigurationTarget.Global);
-                }
-                vscode.window.showInformationMessage(`Theme updated in user settings based on: "${themeDescription}"`);
-            } catch (globalError: any) {
-                throw new Error(`Failed to update settings: ${globalError.message}`);
-            }
-        } else {
-            throw updateError;
-        }
-    }
+): Promise<void> {
+    // Delegate to our refined implementation with legacy compatibility layer
+    await applyThemeCustomizationsLegacy(colorCustomizations, tokenColors, themeDescription);
 }
