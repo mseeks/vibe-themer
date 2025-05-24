@@ -21,8 +21,7 @@ import {
     createThemeApplicationError
 } from './themeCore';
 import { 
-    createVSCodeDependencies, 
-    refreshNotificationStyles 
+    createVSCodeDependencies 
 } from './themeAdapters';
 
 /**
@@ -64,9 +63,6 @@ export const applyThemeCustomizations = async (
 
     // Apply theme with fallback strategy
     const result = await applyWithFallback(customizations, targets, deps);
-    
-    // Refresh notification styles as a side effect
-    refreshNotificationStyles();
     
     // Provide user feedback
     if (result.success) {

@@ -11,7 +11,6 @@ import {
     ThemeApplicationResult,
     ThemeApplicationError
 } from '../types/theme';
-import { forceNotificationStyleRefresh } from './notificationService';
 
 /**
  * VS Code configuration provider implementation.
@@ -136,12 +135,4 @@ export const createVSCodeDependencies = (
             hasWorkspaceFolders: Boolean(vscode.workspace.workspaceFolders?.length)
         }
     };
-};
-
-/**
- * Triggers a notification style refresh after theme application.
- * Separated as a side effect that can be optionally called.
- */
-export const refreshNotificationStyles = (): void => {
-    forceNotificationStyleRefresh();
 };
