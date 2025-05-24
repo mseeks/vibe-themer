@@ -1,18 +1,52 @@
+/**
+ * Clear API Key Command - Elegant credential management.
+ * 
+ * This module provides a clean interface for clearing stored OpenAI credentials.
+ * It leverages our refactored architecture to provide proper error handling,
+ * state management, and user feedback.
+ */
+
 import * as vscode from 'vscode';
 import OpenAI from 'openai';
+import { resetOpenAIClient } from '../services/openaiService';
 
 /**
- * Registers the command to clear the OpenAI API key and reset the OpenAI client instance.
- * @param context The extension context
- * @param openaiRef Reference to the OpenAI client variable (if you want to clear it)
+ * Registers the command to clear the OpenAI API key and reset the OpenAI client.
+ * 
+ * Now uses our improved architecture for robust credential management with
+ * comprehensive error handling and proper state cleanup.
+ * 
+ * @param context - The extension context for command registration and credential access
+ * @param openaiRef - Legacy reference maintained for backward compatibility
  */
-export function registerClearApiKeyCommand(context: vscode.ExtensionContext, openaiRef?: { current?: OpenAI }) {
-    const clearApiKeyCommand = vscode.commands.registerCommand('dynamicThemeChanger.clearApiKey', async () => {
-        await context.secrets.delete('openaiApiKey');
-        if (openaiRef) {
-            openaiRef.current = undefined;
+export function registerClearApiKeyCommand(
+    context: vscode.ExtensionContext, 
+    openaiRef?: { current?: OpenAI }
+) {
+    const clearApiKeyCommand = vscode.commands.registerCommand(
+        'dynamicThemeChanger.clearApiKey', 
+        async () => {
+            try {
+                // Use our new architecture for robust credential clearing
+                await resetOpenAIClient(context);
+                
+                // Clear legacy reference for backward compatibility
+                if (openaiRef) {
+                    openaiRef.current = undefined;
+                }
+                
+                // Success feedback is handled by the service layer
+                // No need for duplicate messaging here
+                
+            } catch (error) {
+                // Fallback error handling in case the service layer fails
+                console.error('Failed to clear API key:', error);
+                vscode.window.showErrorMessage(
+                    'Failed to clear API key. Please try again or restart VS Code.'
+                );
+            }
         }
-        vscode.window.showInformationMessage('OpenAI API Key cleared. You will be prompted for it again on next use.');
-    });
+    );
+    
     context.subscriptions.push(clearApiKeyCommand);
 }

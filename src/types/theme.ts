@@ -4,6 +4,7 @@
  */
 
 import * as vscode from 'vscode';
+import OpenAI from 'openai';
 
 /**
  * Represents a syntax token color rule with strong typing.
@@ -89,4 +90,91 @@ export interface ThemeApplicationDependencies {
     readonly workspace: {
         readonly hasWorkspaceFolders: boolean;
     };
+}
+
+// =============================================================================
+// OpenAI Domain Types
+// =============================================================================
+
+/**
+ * Domain types for OpenAI client management.
+ * These types encode business rules and make invalid states unrepresentable.
+ */
+
+/**
+ * Represents the state of an API key in the system.
+ * Encodes the business rule that we must know the provenance and validity of our API key.
+ */
+export type APIKeyState = 
+    | { readonly status: 'missing'; readonly reason?: 'never-set' | 'deleted' }
+    | { readonly status: 'present'; readonly key: string; readonly source: 'storage' | 'user-input' }
+    | { readonly status: 'invalid'; readonly key: string; readonly error: string };
+
+/**
+ * State of the OpenAI client connection.
+ * Type safety ensures we can only use a client when it's in a valid state.
+ */
+export type OpenAIClientState = 
+    | { readonly status: 'uninitialized' }
+    | { readonly status: 'ready'; readonly apiKey: string; readonly model?: string }
+    | { readonly status: 'error'; readonly error: OpenAIServiceError; readonly lastApiKey?: string };
+
+/**
+ * Result of OpenAI service operations.
+ * Provides structured success/failure information with actionable context.
+ */
+export type OpenAIServiceResult<T = void> = 
+    | { readonly success: true; readonly data: T; readonly clientState: OpenAIClientState }
+    | { readonly success: false; readonly error: OpenAIServiceError; readonly clientState: OpenAIClientState };
+
+/**
+ * Structured error information for OpenAI service failures.
+ * Provides both user-facing messages and technical details for debugging.
+ */
+export interface OpenAIServiceError {
+    readonly message: string;          // User-facing error description
+    readonly cause?: unknown;          // Technical details for debugging  
+    readonly recoverable: boolean;     // Can the user retry this operation?
+    readonly suggestedAction?: string; // What should the user do next?
+    readonly errorType: 'api-key-missing' | 'api-key-invalid' | 'client-creation-failed' | 'storage-error' | 'user-cancelled';
+}
+
+/**
+ * Abstraction over secret storage for API keys.
+ * Enables testing and provides a cleaner interface for key management operations.
+ */
+export interface SecretStorageProvider {
+    readonly get: (key: string) => Promise<string | undefined>;
+    readonly store: (key: string, value: string) => Promise<void>;
+    readonly delete: (key: string) => Promise<void>;
+}
+
+/**
+ * Abstraction over user interaction for API key collection.
+ * Separates UI concerns from business logic and enables testing.
+ */
+export interface UserInteractionProvider {
+    readonly promptForAPIKey: () => Promise<string | undefined>;
+    readonly showSuccessMessage: (message: string) => Promise<void>;
+    readonly showErrorMessage: (message: string) => Promise<void>;
+    readonly showInformationMessage: (message: string) => Promise<void>;
+}
+
+/**
+ * Factory interface for creating OpenAI clients.
+ * Abstracts the OpenAI SDK and enables dependency injection for testing.
+ */
+export interface OpenAIClientFactory {
+    readonly createClient: (apiKey: string) => Promise<OpenAI>;
+    readonly validateClient: (client: OpenAI) => Promise<boolean>;
+}
+
+/**
+ * Dependencies required for OpenAI service operations.
+ * Makes dependencies explicit and enables comprehensive testing.
+ */
+export interface OpenAIServiceDependencies {
+    readonly secretStorage: SecretStorageProvider;
+    readonly userInteraction: UserInteractionProvider;
+    readonly clientFactory: OpenAIClientFactory;
 }

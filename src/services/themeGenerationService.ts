@@ -1,23 +1,37 @@
 import * as vscode from 'vscode';
-import { ensureOpenAIClient } from './openaiService';
+import { ensureOpenAIClient, getOpenAIClientState } from './openaiService';
 import { applyThemeCustomizations } from './themeService';
 import { applyThemeCustomizations as applyThemeCustomizationsCore } from './themeApplication';
 import { SilentNotificationStrategy, createVSCodeDependencies } from './themeAdapters';
 import { getSelectedOpenAIModel } from '../commands/modelSelectCommand';
+import { OpenAIServiceResult, OpenAIServiceError } from '../types/theme';
 import * as fs from "fs";
 import * as path from "path";
 
 /**
  * Orchestrates the theme generation workflow: prompts user, calls OpenAI, parses response, applies theme.
- * Handles all progress, error, and user messaging.
+ * 
+ * This function demonstrates how to integrate with our new OpenAI service architecture.
+ * It handles all progress, error, and user messaging using the enhanced patterns from
+ * our functional refactoring while maintaining the same external interface.
+ * 
  * Updates the lastGeneratedThemeRef with the new theme.
  */
 export async function runThemeGenerationWorkflow(
     context: vscode.ExtensionContext,
     lastGeneratedThemeRef: { current?: any }
 ) {
+    // Use the enhanced OpenAI client with better error handling and state management
     const openai = await ensureOpenAIClient(context);
-    if (!openai) return;
+    if (!openai) {
+        // The ensureOpenAIClient already handled user interaction and error display
+        // We can optionally provide additional context based on the client state
+        const clientState = getOpenAIClientState();
+        if (clientState.status === 'error') {
+            console.error('Theme generation aborted due to OpenAI client error:', clientState.error);
+        }
+        return;
+    }
 
     const themeDescription = await vscode.window.showInputBox({
         prompt: 'Describe the theme you want (e.g., "warm and cozy", "futuristic dark blue")',
@@ -109,9 +123,51 @@ export async function runThemeGenerationWorkflow(
         });
         
     } catch (error: any) {
-        // Handle both communication errors and theme generation/application errors
-        const isNetworkError = error.message.includes('fetch') || error.message.includes('network') || error.message.includes('connection');
-        const errorPrefix = isNetworkError ? 'Error communicating with OpenAI' : 'Could not generate a valid color theme';
-        vscode.window.showErrorMessage(`${errorPrefix}: ${error.message}`);
+        // Enhanced error handling using our functional architecture patterns
+        // We categorize errors and provide more specific user feedback
+        const isNetworkError = error.message.includes('fetch') || 
+                               error.message.includes('network') || 
+                               error.message.includes('connection');
+        
+        const isAPIError = error.message.includes('API') || 
+                          error.message.includes('429') || 
+                          error.message.includes('quota');
+        
+        const isParsingError = error.message.includes('parse') || 
+                              error.message.includes('JSON') || 
+                              error.message.includes('Invalid');
+
+        // Provide contextual error messages based on error type
+        let errorPrefix: string;
+        let suggestedAction: string | undefined;
+
+        if (isNetworkError) {
+            errorPrefix = 'Network error while communicating with OpenAI';
+            suggestedAction = 'Check your internet connection and try again';
+        } else if (isAPIError) {
+            errorPrefix = 'OpenAI API error';
+            suggestedAction = 'Check your API key validity and quota limits';
+        } else if (isParsingError) {
+            errorPrefix = 'Could not generate a valid color theme';
+            suggestedAction = 'Try rephrasing your theme description or try again';
+        } else {
+            errorPrefix = 'Theme generation failed';
+            suggestedAction = 'Please try again or contact support if the issue persists';
+        }
+
+        const fullMessage = suggestedAction 
+            ? `${errorPrefix}: ${error.message}. ${suggestedAction}.`
+            : `${errorPrefix}: ${error.message}`;
+
+        vscode.window.showErrorMessage(fullMessage);
+        
+        // Log detailed error information for debugging
+        console.error('Theme generation workflow error:', {
+            originalError: error,
+            errorType: isNetworkError ? 'network' : isAPIError ? 'api' : isParsingError ? 'parsing' : 'unknown',
+            clientState: getOpenAIClientState(),
+            themeDescription,
+            selectedModel
+        });
     }
 }
