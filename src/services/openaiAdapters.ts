@@ -135,7 +135,6 @@ export class StandardOpenAIClientFactory implements OpenAIClientFactory {
             const client = new OpenAI({ 
                 apiKey,
                 // Future enhancement: add custom configuration
-                timeout: 30000, // 30 second timeout for requests
             });
             
             return client;
