@@ -137,7 +137,7 @@ const applyTheme = async (deps: ThemeApplicationDependencies) => {
 
 ### **Basic Usage** (maintains backward compatibility)
 ```typescript
-import { applyThemeCustomizations } from './services/themeService';
+import { applyThemeCustomizations } from './services/themeApplication';
 
 await applyThemeCustomizations(
     { "editor.background": "#1e1e1e" },

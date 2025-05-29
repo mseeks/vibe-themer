@@ -17,8 +17,8 @@ import * as vscode from 'vscode';
 import OpenAI from 'openai';
 import { getSelectedOpenAIModel } from '../commands/modelSelectCommand';
 import { 
-    initializeOpenAIClientLegacy, 
-    getOpenAIClientLegacy,
+    initializeOpenAIClient as initializeOpenAIClientCore,
+    getCurrentOpenAIClient,
     ensureOpenAIClient as ensureOpenAIClientCore,
     getCurrentClientState,
     resetOpenAIClient as resetOpenAIClientCore
@@ -39,8 +39,9 @@ export async function initializeOpenAIClient(context: vscode.ExtensionContext): 
     // Create dependencies using VS Code APIs
     const dependencies = createVSCodeOpenAIDependencies(context);
     
-    // Delegate to our refined implementation with legacy compatibility layer
-    return await initializeOpenAIClientLegacy(dependencies);
+    // Call the core implementation directly and return success status
+    const result = await initializeOpenAIClientCore(dependencies);
+    return result.success;
 }
 
 /**
@@ -53,7 +54,7 @@ export async function initializeOpenAIClient(context: vscode.ExtensionContext): 
  * @returns The current OpenAI client or undefined if not initialized
  */
 export function getOpenAIClient(): OpenAI | undefined {
-    return getOpenAIClientLegacy();
+    return getCurrentOpenAIClient();
 }
 
 /**

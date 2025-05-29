@@ -145,34 +145,3 @@ const applySingleTarget = async (
         );
     }
 };
-
-/**
- * Convenience function that maintains backward compatibility with the old API.
- * Transforms the legacy parameters into our new domain model.
- */
-export const applyThemeCustomizationsLegacy = async (
-    colorCustomizations: Record<string, string>,
-    tokenColors: any[] | undefined,
-    themeDescription: string
-): Promise<void> => {
-    // Transform legacy tokenColors format to our typed format
-    const typedTokenColors: TokenColorRule[] = (tokenColors || []).map(rule => ({
-        scope: rule.scope || [],
-        settings: {
-            foreground: rule.settings?.foreground,
-            background: rule.settings?.background,
-            fontStyle: rule.settings?.fontStyle
-        }
-    }));
-
-    const result = await applyThemeCustomizations(
-        colorCustomizations,
-        typedTokenColors,
-        themeDescription
-    );
-
-    // For backward compatibility, throw on failure
-    if (!result.success) {
-        throw new Error(result.error.message);
-    }
-};

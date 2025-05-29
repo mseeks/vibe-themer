@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { ensureOpenAIClient, getOpenAIClientState } from './openaiService';
-import { applyThemeCustomizations } from './themeService';
-import { applyThemeCustomizations as applyThemeCustomizationsCore } from './themeApplication';
+import { applyThemeCustomizations } from './themeApplication';
 import { SilentNotificationStrategy, createVSCodeDependencies } from './themeAdapters';
 import { getSelectedOpenAIModel } from '../commands/modelSelectCommand';
 import { OpenAIServiceResult, OpenAIServiceError } from '../types/theme';
@@ -109,7 +108,7 @@ export async function runThemeGenerationWorkflow(
                 notification: new SilentNotificationStrategy()
             };
             
-            const result = await applyThemeCustomizationsCore(
+            const result = await applyThemeCustomizations(
                 selectors,
                 tokenColors,
                 themeDescription,

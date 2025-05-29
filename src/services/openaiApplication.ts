@@ -231,24 +231,4 @@ export const resetOpenAIClient = async (
     }
 };
 
-/**
- * Convenience function that maintains backward compatibility with the old API.
- * Transforms the legacy boolean-based API into our new Result-based API.
- * 
- * @param dependencies - Dependencies for client initialization
- * @returns Boolean indicating success (legacy compatibility)
- */
-export const initializeOpenAIClientLegacy = async (
-    dependencies: OpenAIServiceDependencies
-): Promise<boolean> => {
-    const result = await initializeOpenAIClient(dependencies);
-    return result.success;
-};
 
-/**
- * Legacy function for getting current client - returns undefined if not ready.
- * Maintains backward compatibility while encouraging migration to new API.
- */
-export const getOpenAIClientLegacy = (): OpenAI | undefined => {
-    return getCurrentOpenAIClient();
-};
