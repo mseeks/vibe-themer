@@ -1,14 +1,15 @@
 /**
- * Core domain logic for OpenAI client management.
- * Pure functions that encode business rules without side effects.
+ * Core OpenAI client management with integrated orchestration.
+ * Combines pure domain logic with client lifecycle management.
  * 
  * Design Philosophy:
- * - Pure functions that can be tested in isolation
+ * - Pure functions for domain logic, state management for orchestration
  * - Rich types that make invalid states unrepresentable
- * - Business logic separated from infrastructure concerns
- * - Functional composition over imperative control flow
+ * - Functional composition with practical state management
+ * - Explicit error handling with structured failure information
  */
 
+import * as vscode from 'vscode';
 import OpenAI from 'openai';
 import { 
     APIKeyState, 
@@ -194,4 +195,230 @@ export const createApiKeyStateFromUserInput = (
         key: userInput, 
         source: 'user-input' 
     };
+};
+
+/**
+ * The OpenAI API key identifier used in secure storage.
+ * Centralized constant to ensure consistency across the application.
+ */
+const OPENAI_API_KEY_STORAGE_KEY = 'openaiApiKey';
+
+/**
+ * Current client state - encapsulated to prevent direct mutation.
+ * Business rule: client state should only be modified through controlled operations.
+ */
+let currentClientState: OpenAIClientState = { status: 'uninitialized' };
+let currentClient: OpenAI | undefined;
+
+/**
+ * Validates an OpenAI client by testing connectivity.
+ */
+const validateOpenAIClient = async (client: OpenAI): Promise<boolean> => {
+    try {
+        await client.models.list();
+        return true;
+    } catch (error) {
+        console.log('OpenAI client validation failed:', error);
+        return false;
+    }
+};
+
+/**
+ * Initializes the OpenAI client with comprehensive error handling and user feedback.
+ * This is the main entry point that orchestrates the entire initialization process.
+ * 
+ * Business Logic:
+ * - First attempt to use stored API key (better UX - don't prompt unnecessarily)
+ * - If no key or invalid key, prompt user for input
+ * - Store valid keys for future use
+ * - Provide rich feedback for all scenarios
+ * 
+ * @param context - VS Code extension context for storage and UI access
+ * @returns Result indicating success/failure with rich context
+ */
+export const initializeOpenAIClient = async (
+    context: vscode.ExtensionContext
+): Promise<OpenAIServiceResult<OpenAI>> => {
+    try {
+        // Step 1: Check for existing API key in storage
+        const storedKey = await context.secrets.get(OPENAI_API_KEY_STORAGE_KEY);
+        let keyState = createApiKeyStateFromStorage(storedKey);
+        
+        // Step 2: Determine what action to take based on current key state
+        const requiredAction = determineRequiredAction(keyState);
+        
+        if (requiredAction === 'prompt-user') {
+            // Step 3: Get API key from user if needed
+            const userInput = await vscode.window.showInputBox({
+                prompt: 'Enter your OpenAI API Key',
+                ignoreFocusOut: true,
+                password: true,
+                placeHolder: 'sk-...',
+                validateInput: (value) => {
+                    if (!value) return 'API key is required';
+                    if (!value.startsWith('sk-')) return 'OpenAI API keys start with "sk-"';
+                    if (value.length < 20) return 'API key appears to be too short';
+                    return undefined;
+                }
+            });
+            keyState = createApiKeyStateFromUserInput(userInput);
+            
+            // User cancelled the prompt
+            if (keyState.status === 'missing') {
+                const error = createOpenAIServiceError(
+                    'OpenAI API Key is required for this extension to work',
+                    'user-cancelled',
+                    { 
+                        recoverable: true,
+                        suggestedAction: 'Please run the command again and provide your API key'
+                    }
+                );
+                
+                currentClientState = createErrorClientState(error);
+                await vscode.window.showErrorMessage(error.message);
+                return createFailureResult(error, currentClientState);
+            }
+        }
+        
+        // Step 4: At this point we should have a valid API key
+        const apiKey = extractApiKey(keyState);
+        if (!apiKey) {
+            const error = createOpenAIServiceError(
+                'Unable to obtain valid API key',
+                'api-key-missing',
+                { 
+                    recoverable: true,
+                    suggestedAction: 'Please check your API key format and try again'
+                }
+            );
+            
+            currentClientState = createErrorClientState(error);
+            return createFailureResult(error, currentClientState);
+        }
+        
+        // Step 5: Create and validate the OpenAI client
+        const client = new OpenAI({ apiKey });
+        const isValid = await validateOpenAIClient(client);
+        
+        if (!isValid) {
+            const error = createOpenAIServiceError(
+                'OpenAI API key is invalid or cannot connect to OpenAI services',
+                'api-key-invalid',
+                { 
+                    recoverable: true,
+                    suggestedAction: 'Please verify your API key and check your internet connection'
+                }
+            );
+            
+            currentClientState = createErrorClientState(error, apiKey);
+            await vscode.window.showErrorMessage(error.message);
+            return createFailureResult(error, currentClientState);
+        }
+        
+        // Step 6: Store the key if it came from user input (avoid unnecessary storage writes)
+        if (keyState.status === 'present' && keyState.source === 'user-input') {
+            await context.secrets.store(OPENAI_API_KEY_STORAGE_KEY, apiKey);
+            await vscode.window.showInformationMessage('OpenAI API Key stored successfully!');
+        }
+        
+        // Step 7: Update our state and return success
+        currentClient = client;
+        currentClientState = createReadyClientState(apiKey, client);
+        
+        return createSuccessResult(client, currentClientState);
+        
+    } catch (error) {
+        // Handle unexpected errors with rich context
+        const serviceError = error instanceof Error && 'errorType' in error
+            ? error as any  // It's already our domain error
+            : createOpenAIServiceError(
+                'Unexpected error during OpenAI client initialization',
+                'client-creation-failed',
+                { 
+                    cause: error,
+                    recoverable: true,
+                    suggestedAction: 'Please try again or restart VS Code'
+                }
+            );
+        
+        currentClientState = createErrorClientState(serviceError);
+        return createFailureResult(serviceError, currentClientState);
+    }
+};
+
+/**
+ * Ensures the OpenAI client is available and ready for use.
+ * If not initialized, attempts initialization. If already initialized, returns existing client.
+ * 
+ * Business Rule: Always provide a client when possible, initialize transparently when needed.
+ * 
+ * @param context - VS Code extension context for initialization if needed
+ * @returns Result with client or detailed error information
+ */
+export const ensureOpenAIClient = async (
+    context: vscode.ExtensionContext
+): Promise<OpenAIServiceResult<OpenAI>> => {
+    // If we already have a ready client, return it immediately
+    if (isClientReady(currentClientState) && currentClient) {
+        return createSuccessResult(currentClient, currentClientState);
+    }
+    
+    // Otherwise, initialize the client
+    return await initializeOpenAIClient(context);
+};
+
+/**
+ * Gets the current OpenAI client if available.
+ * Returns undefined if not initialized - this forces callers to handle the uninitialized case.
+ * 
+ * Design Decision: Return undefined rather than throwing to make the uninitialized state explicit.
+ */
+export const getCurrentOpenAIClient = (): OpenAI | undefined => {
+    return isClientReady(currentClientState) ? currentClient : undefined;
+};
+
+/**
+ * Gets the current client state for inspection.
+ * Useful for displaying status information or debugging.
+ */
+export const getCurrentClientState = (): OpenAIClientState => {
+    return currentClientState;
+};
+
+/**
+ * Resets the OpenAI client state and clears stored credentials.
+ * Useful for switching API keys or troubleshooting connection issues.
+ * 
+ * @param context - VS Code extension context for storage access
+ * @returns Result indicating success/failure of the reset operation
+ */
+export const resetOpenAIClient = async (
+    context: vscode.ExtensionContext
+): Promise<OpenAIServiceResult<void>> => {
+    try {
+        // Clear stored API key
+        await context.secrets.delete(OPENAI_API_KEY_STORAGE_KEY);
+        
+        // Reset internal state
+        currentClient = undefined;
+        currentClientState = { status: 'uninitialized' };
+        
+        await vscode.window.showInformationMessage('OpenAI client reset successfully');
+        
+        return createSuccessResult(undefined, currentClientState);
+        
+    } catch (error) {
+        const serviceError = createOpenAIServiceError(
+            'Failed to reset OpenAI client',
+            'storage-error',
+            { 
+                cause: error,
+                recoverable: true,
+                suggestedAction: 'Try restarting VS Code or manually clearing extension data'
+            }
+        );
+        
+        currentClientState = createErrorClientState(serviceError);
+        return createFailureResult(serviceError, currentClientState);
+    }
 };

@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { ensureOpenAIClient, getOpenAIClientState } from './openaiService';
-import { applyThemeCustomizations } from './themeApplication';
-import { SilentNotificationStrategy, createVSCodeDependencies } from './themeAdapters';
+import { applyThemeCustomizations } from './themeCore';
 import { getSelectedOpenAIModel } from '../commands/modelSelectCommand';
 import { OpenAIServiceResult, OpenAIServiceError } from '../types/theme';
 import * as fs from "fs";
@@ -103,16 +102,11 @@ export async function runThemeGenerationWorkflow(
             
             // Apply theme with silent notifications to avoid double error dialogs
             // We'll handle success/error notifications in the outer try-catch
-            const silentDeps = {
-                ...createVSCodeDependencies(),
-                notification: new SilentNotificationStrategy()
-            };
-            
             const result = await applyThemeCustomizations(
                 selectors,
                 tokenColors,
                 themeDescription,
-                silentDeps
+                true // suppressNotifications = true
             );
             
             // If theme application failed, throw an error to be caught by outer try-catch

@@ -22,8 +22,7 @@ import {
     ensureOpenAIClient as ensureOpenAIClientCore,
     getCurrentClientState,
     resetOpenAIClient as resetOpenAIClientCore
-} from './openaiApplication';
-import { createVSCodeOpenAIDependencies } from './openaiAdapters';
+} from './openaiCore';
 
 /**
  * Initializes the OpenAI client with comprehensive error handling and user feedback.
@@ -36,11 +35,8 @@ import { createVSCodeOpenAIDependencies } from './openaiAdapters';
  * @returns A boolean indicating whether initialization was successful
  */
 export async function initializeOpenAIClient(context: vscode.ExtensionContext): Promise<boolean> {
-    // Create dependencies using VS Code APIs
-    const dependencies = createVSCodeOpenAIDependencies(context);
-    
     // Call the core implementation directly and return success status
-    const result = await initializeOpenAIClientCore(dependencies);
+    const result = await initializeOpenAIClientCore(context);
     return result.success;
 }
 
@@ -68,11 +64,8 @@ export function getOpenAIClient(): OpenAI | undefined {
  * @returns The OpenAI client instance or undefined if initialization fails
  */
 export async function ensureOpenAIClient(context: vscode.ExtensionContext): Promise<OpenAI | undefined> {
-    // Create dependencies for the operation
-    const dependencies = createVSCodeOpenAIDependencies(context);
-    
     // Use our new architecture with rich error handling
-    const result = await ensureOpenAIClientCore(dependencies);
+    const result = await ensureOpenAIClientCore(context);
     
     // Transform result to legacy format for backward compatibility
     if (result.success) {
@@ -106,8 +99,7 @@ export function getOpenAIClientState() {
  * @returns Promise that resolves when reset is complete
  */
 export async function resetOpenAIClient(context: vscode.ExtensionContext): Promise<void> {
-    const dependencies = createVSCodeOpenAIDependencies(context);
-    const result = await resetOpenAIClientCore(dependencies);
+    const result = await resetOpenAIClientCore(context);
     
     // For the public API, we don't need to return the result
     // Errors are handled internally and shown to the user

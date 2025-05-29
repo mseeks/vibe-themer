@@ -57,41 +57,6 @@ export interface ThemeApplicationError {
     readonly suggestedAction?: string;
 }
 
-/**
- * Strategy for providing user feedback after theme application.
- * Separates the concern of notification from the core business logic.
- */
-export interface NotificationStrategy {
-    readonly showSuccessNotification: (result: ThemeApplicationResult, description: string) => Promise<void>;
-    readonly showErrorNotification: (error: ThemeApplicationError) => Promise<void>;
-    readonly enableTestNotifications: boolean;
-}
-
-/**
- * Abstraction over VS Code's configuration API.
- * Enables testing and provides a cleaner interface for theme operations.
- */
-export interface ConfigurationProvider {
-    readonly update: (
-        section: string, 
-        value: unknown, 
-        target: vscode.ConfigurationTarget
-    ) => Promise<void>;
-    readonly get: <T>(section: string) => T | undefined;
-}
-
-/**
- * Dependencies required for theme application.
- * Makes dependencies explicit and enables testing/mocking.
- */
-export interface ThemeApplicationDependencies {
-    readonly configuration: ConfigurationProvider;
-    readonly notification: NotificationStrategy;
-    readonly workspace: {
-        readonly hasWorkspaceFolders: boolean;
-    };
-}
-
 // =============================================================================
 // OpenAI Domain Types
 // =============================================================================
@@ -137,44 +102,4 @@ export interface OpenAIServiceError {
     readonly recoverable: boolean;     // Can the user retry this operation?
     readonly suggestedAction?: string; // What should the user do next?
     readonly errorType: 'api-key-missing' | 'api-key-invalid' | 'client-creation-failed' | 'storage-error' | 'user-cancelled';
-}
-
-/**
- * Abstraction over secret storage for API keys.
- * Enables testing and provides a cleaner interface for key management operations.
- */
-export interface SecretStorageProvider {
-    readonly get: (key: string) => Promise<string | undefined>;
-    readonly store: (key: string, value: string) => Promise<void>;
-    readonly delete: (key: string) => Promise<void>;
-}
-
-/**
- * Abstraction over user interaction for API key collection.
- * Separates UI concerns from business logic and enables testing.
- */
-export interface UserInteractionProvider {
-    readonly promptForAPIKey: () => Promise<string | undefined>;
-    readonly showSuccessMessage: (message: string) => Promise<void>;
-    readonly showErrorMessage: (message: string) => Promise<void>;
-    readonly showInformationMessage: (message: string) => Promise<void>;
-}
-
-/**
- * Factory interface for creating OpenAI clients.
- * Abstracts the OpenAI SDK and enables dependency injection for testing.
- */
-export interface OpenAIClientFactory {
-    readonly createClient: (apiKey: string) => Promise<OpenAI>;
-    readonly validateClient: (client: OpenAI) => Promise<boolean>;
-}
-
-/**
- * Dependencies required for OpenAI service operations.
- * Makes dependencies explicit and enables comprehensive testing.
- */
-export interface OpenAIServiceDependencies {
-    readonly secretStorage: SecretStorageProvider;
-    readonly userInteraction: UserInteractionProvider;
-    readonly clientFactory: OpenAIClientFactory;
 }

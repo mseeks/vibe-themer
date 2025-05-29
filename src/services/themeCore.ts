@@ -1,6 +1,6 @@
 /**
- * Core domain logic for theme application.
- * Pure functions that encode business rules without side effects.
+ * Core theme application logic with integrated orchestration.
+ * Combines pure domain logic with theme application lifecycle management.
  */
 
 import * as vscode from 'vscode';
@@ -147,3 +147,141 @@ export const createFailureResult = (error: ThemeApplicationError): ThemeApplicat
     success: false,
     error
 });
+
+/**
+ * Applies theme customizations with comprehensive error handling and user feedback.
+ * This is the main entry point that orchestrates the entire theme application process.
+ * 
+ * Design principles:
+ * - Functional composition of smaller, focused operations
+ * - Explicit error handling with rich context
+ * - Direct VS Code API usage for simplicity
+ * - Type safety that prevents invalid operations
+ */
+export const applyThemeCustomizations = async (
+    colorCustomizations: Record<string, string>,
+    tokenColors: TokenColorRule[] | undefined,
+    themeDescription: string,
+    suppressNotifications: boolean = false
+): Promise<ThemeApplicationResult> => {
+    // Create our domain object with validated input
+    const customizations: ThemeCustomizations = {
+        colorCustomizations,
+        tokenColors: tokenColors || [],
+        description: themeDescription
+    };
+
+    // Validate before attempting application
+    const validationResult = validateThemeCustomizations(customizations);
+    if (!validationResult.success) {
+        if (!suppressNotifications) {
+            await vscode.window.showErrorMessage(validationResult.error.message);
+        }
+        return validationResult;
+    }
+
+    // Determine where to apply the theme based on workspace context
+    const hasWorkspaceFolders = (vscode.workspace.workspaceFolders?.length ?? 0) > 0;
+    const scope = determineConfigurationScope(hasWorkspaceFolders);
+    const targets = getConfigurationTargets(scope);
+
+    // Apply theme with fallback strategy
+    const result = await applyWithFallback(customizations, targets);
+    
+    // Provide user feedback
+    if (result.success && !suppressNotifications) {
+        const scopeDescription = describeScopeApplication(result.appliedScope);
+        const message = `Theme "${themeDescription}" applied ${scopeDescription}`;
+        await vscode.window.showInformationMessage(message);
+    } else if (!result.success && !suppressNotifications) {
+        await vscode.window.showErrorMessage(result.error.message);
+    }
+
+    return result;
+};
+
+/**
+ * Applies theme customizations with fallback to alternative configuration targets.
+ * Implements the retry logic as a pure functional composition.
+ */
+const applyWithFallback = async (
+    customizations: ThemeCustomizations,
+    targets: vscode.ConfigurationTarget[]
+): Promise<ThemeApplicationResult> => {
+    let lastError: unknown;
+
+    for (const target of targets) {
+        try {
+            await applySingleTarget(customizations, target);
+            
+            // Success - determine which scope was actually used
+            const appliedScope: ConfigurationScope = targets.length === 1 
+                ? (target === vscode.ConfigurationTarget.Workspace 
+                    ? { type: 'workspace', target: vscode.ConfigurationTarget.Workspace }
+                    : { type: 'global', target: vscode.ConfigurationTarget.Global })
+                : { type: 'both', primary: targets[0], fallback: targets[1] };
+            
+            return createSuccessResult(appliedScope);
+        } catch (error) {
+            lastError = error;
+            // Continue to next target if available
+        }
+    }
+
+    // All targets failed
+    return createFailureResult(
+        createThemeApplicationError(
+            'Failed to apply theme to any configuration target',
+            lastError,
+            true,
+            'Check VS Code permissions and try restarting the editor'
+        )
+    );
+};
+
+/**
+ * Applies theme customizations to a single configuration target.
+ * Separated for clarity and testability.
+ */
+const applySingleTarget = async (
+    customizations: ThemeCustomizations,
+    target: vscode.ConfigurationTarget
+): Promise<void> => {
+    const config = vscode.workspace.getConfiguration();
+    
+    // Apply color customizations
+    await config.update(
+        'workbench.colorCustomizations', 
+        customizations.colorCustomizations, 
+        target
+    );
+
+    // Apply token colors if present
+    if (customizations.tokenColors.length > 0) {
+        const existingTokenCustomizations = config.get('editor.tokenColorCustomizations') as Record<string, unknown> | undefined;
+        const newTokenCustomizations = prepareTokenColorCustomizations(
+            customizations.tokenColors,
+            existingTokenCustomizations
+        );
+        
+        await config.update(
+            'editor.tokenColorCustomizations',
+            newTokenCustomizations,
+            target
+        );
+    }
+};
+
+/**
+ * Describes how the scope was applied for user feedback.
+ */
+const describeScopeApplication = (scope: ConfigurationScope): string => {
+    switch (scope.type) {
+        case 'workspace':
+            return 'to workspace settings';
+        case 'global':
+            return 'to global settings';
+        case 'both':
+            return 'to global settings (with workspace fallback)';
+    }
+};
