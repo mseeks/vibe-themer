@@ -8,7 +8,7 @@ import * as path from "path";
 
 /**
  * Shows a success popup after streaming theme application with recap and reset option.
- * Provides clear feedback about the streaming process and an obvious way to delete the theme.
+ * Emphasizes the importance of using the reset command to remove the theme.
  */
 async function showStreamingThemeSuccessPopup(
     themeDescription: string, 
@@ -21,18 +21,19 @@ async function showStreamingThemeSuccessPopup(
         ? "✅ Good theme coverage - most UI elements should be styled"
         : "🎨 Comprehensive theme generated - all major UI areas styled!";
         
-    const message = `✅ Theme streaming complete!\n\nYour theme: "${themeDescription}"\nApplied ${settingsApplied} settings in real-time\n\n${completenessMessage}`;
+    const message = `🎨 Theme "${themeDescription}" applied successfully!\n\nApplied ${settingsApplied} color settings in real-time\n\n${completenessMessage}\n\n⚠️ IMPORTANT: This theme overrides your VS Code settings. Use "Reset Theme Customizations" command to remove it and return to your original theme.`;
     
     const action = await vscode.window.showInformationMessage(
         message,
         {
-            modal: false,
-            detail: 'Your VS Code theme was updated live as AI generated each color setting. The theme has been fully applied!'
+            modal: true,
+            detail: 'Your theme was applied live as AI generated each setting. To return to your original theme, you must use the Reset command - simply changing themes in VS Code settings will not remove these customizations.'
         },
-        'Delete Theme (Resets to Default)'
+        'Keep Theme',
+        'Reset Theme (Remove All Customizations)'
     );
 
-    if (action === 'Delete Theme (Resets to Default)') {
+    if (action === 'Reset Theme (Remove All Customizations)') {
         // Execute the reset theme command
         await vscode.commands.executeCommand('dynamicThemeChanger.resetTheme');
     }
@@ -64,11 +65,21 @@ export async function runThemeGenerationWorkflow(
     const openai = openaiResult.data;
 
     const themeDescription = await vscode.window.showInputBox({
-        prompt: 'Describe the theme you want (e.g., "warm and cozy", "futuristic dark blue")',
-        placeHolder: 'e.g., "ocean vibes"'
+        prompt: '🎨 Describe your ideal coding atmosphere (e.g., "warm sunset over mountains", "cyberpunk neon city", "calm forest morning")',
+        placeHolder: 'Be descriptive for best results: "cozy autumn evening with golden highlights"',
+        value: '',
+        validateInput: (value) => {
+            if (!value.trim()) {
+                return 'Please enter a theme description';
+            }
+            if (value.trim().length < 3) {
+                return 'Please provide a more detailed description for better results';
+            }
+            return null;
+        }
     });
     if (!themeDescription) {
-        vscode.window.showInformationMessage('No theme description provided.');
+        vscode.window.showInformationMessage('No theme description provided. Try again when you\'re ready to create your perfect coding atmosphere! 🎨', { modal: true });
         return;
     }
 
@@ -83,10 +94,10 @@ export async function runThemeGenerationWorkflow(
     try {
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: "Generating comprehensive theme...",
+            title: "🎨 Creating your perfect theme...",
             cancellable: false
         }, async (progress) => {
-            progress.report({ message: "Starting theme generation..." });
+            progress.report({ message: "🤖 AI is analyzing your description..." });
             
             // Read streaming prompt
             const streamingPrompt = fs.readFileSync(
@@ -94,16 +105,14 @@ export async function runThemeGenerationWorkflow(
                 'utf8'
             );
 
-            // Create streaming completion with increased token limit for comprehensive themes
+            // Create streaming completion for comprehensive themes
             const stream = await openai.chat.completions.create({
                 model: selectedModel,
                 messages: [
                     { role: "system", content: streamingPrompt },
                     { role: "user", content: `Theme description: ${themeDescription}` }
                 ],
-                stream: true,
-                max_tokens: 6000, // Increased for comprehensive themes (80-150+ settings)
-                temperature: 0.5  // Reduced for more consistent output
+                stream: true
             });
 
             let buffer = '';
@@ -148,10 +157,10 @@ export async function runThemeGenerationWorkflow(
                             // Update progress with completion tracking
                             const settingName = setting.type === 'selector' ? setting.name : setting.scope;
                             const progressMessage = settingsApplied < 50 
-                                ? `Applied ${settingName} (${settingsApplied}/100+ settings)`
+                                ? `🎨 Applying ${settingName} (${settingsApplied}/100+ settings)`
                                 : settingsApplied < 100
-                                ? `Applied ${settingName} (${settingsApplied}/100+ settings - making good progress)`
-                                : `Applied ${settingName} (${settingsApplied} settings - comprehensive theme!)`;
+                                ? `✨ Great progress! Applied ${settingName} (${settingsApplied}/100+ settings)`
+                                : `🌟 Comprehensive theme! Applied ${settingName} (${settingsApplied} settings)`;
                                 
                             progress.report({ 
                                 message: progressMessage
@@ -198,7 +207,7 @@ export async function runThemeGenerationWorkflow(
                 }
             }
 
-            progress.report({ message: `Completed! Applied ${settingsApplied} theme settings` });
+            progress.report({ message: `🎉 Theme complete! Applied ${settingsApplied} color settings to transform your VS Code` });
         });
 
         // Build theme data structure for reference
@@ -239,24 +248,24 @@ export async function runThemeGenerationWorkflow(
         let suggestedAction: string | undefined;
 
         if (isNetworkError) {
-            errorPrefix = 'Network error during streaming theme generation';
-            suggestedAction = 'Check your internet connection and try again';
+            errorPrefix = '🌐 Connection issue during theme generation';
+            suggestedAction = 'Please check your internet connection and try again';
         } else if (isAPIError) {
-            errorPrefix = 'OpenAI API error during streaming';
-            suggestedAction = 'Check your API key validity and quota limits';
+            errorPrefix = '🔑 OpenAI API issue during theme creation';
+            suggestedAction = 'Please check your API key validity and quota limits in your OpenAI dashboard';
         } else if (isStreamingError) {
-            errorPrefix = 'Error during theme streaming';
-            suggestedAction = `${settingsApplied} settings were applied before the error. Try running again to continue.`;
+            errorPrefix = '⚠️ Theme generation was interrupted';
+            suggestedAction = `${settingsApplied} settings were successfully applied before the interruption. You can try generating again to continue, or use "Reset Theme Customizations" to start fresh.`;
         } else {
-            errorPrefix = 'Streaming theme generation failed';
-            suggestedAction = 'Please try again or contact support if the issue persists';
+            errorPrefix = '❌ Theme generation encountered an error';
+            suggestedAction = 'Please try again with a different description, or contact support if the issue persists';
         }
 
         const fullMessage = suggestedAction 
             ? `${errorPrefix}: ${error.message}. ${suggestedAction}`
             : `${errorPrefix}: ${error.message}`;
 
-        vscode.window.showErrorMessage(fullMessage);
+        vscode.window.showErrorMessage(fullMessage, { modal: true });
         
         // Log detailed error information for debugging
         console.error('Streaming theme generation error:', {

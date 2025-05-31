@@ -23,7 +23,13 @@ export function registerResetThemeCommand(context: vscode.ExtensionContext, last
                 lastGeneratedThemeRef.current = undefined;
             }
             
-            vscode.window.showInformationMessage('Theme customizations cleared successfully.');
+            vscode.window.showInformationMessage(
+                '🔄 Theme customizations cleared successfully! Your original VS Code theme has been restored.',
+                {
+                    modal: true,
+                    detail: 'All VibeThemer color overrides have been removed. You can now change to a different base theme in VS Code settings or generate a new VibeThemer theme.'
+                }
+            );
         } catch (error: any) {
             vscode.window.showErrorMessage(`Failed to reset theme: ${error.message}`);
         }

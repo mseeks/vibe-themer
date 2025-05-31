@@ -42,7 +42,8 @@ export function registerClearApiKeyCommand(
                 // Fallback error handling in case the service layer fails
                 console.error('Failed to clear API key:', error);
                 vscode.window.showErrorMessage(
-                    'Failed to clear API key. Please try again or restart VS Code.'
+                    'Failed to clear API key. Please try again or restart VS Code.',
+                    { modal: true }
                 );
             }
         }

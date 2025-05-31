@@ -275,7 +275,7 @@ export const initializeOpenAIClient = async (
                 );
                 
                 currentClientState = createErrorClientState(error);
-                await vscode.window.showErrorMessage(error.message);
+                await vscode.window.showErrorMessage(error.message, { modal: true });
                 return createFailureResult(error, currentClientState);
             }
         }
@@ -311,14 +311,14 @@ export const initializeOpenAIClient = async (
             );
             
             currentClientState = createErrorClientState(error, apiKey);
-            await vscode.window.showErrorMessage(error.message);
+            await vscode.window.showErrorMessage(error.message, { modal: true });
             return createFailureResult(error, currentClientState);
         }
         
         // Step 6: Store the key if it came from user input (avoid unnecessary storage writes)
         if (keyState.status === 'present' && keyState.source === 'user-input') {
             await context.secrets.store(OPENAI_API_KEY_STORAGE_KEY, apiKey);
-            await vscode.window.showInformationMessage('OpenAI API Key stored successfully!');
+            await vscode.window.showInformationMessage('OpenAI API Key stored successfully!', { modal: true });
         }
         
         // Step 7: Update our state and return success
@@ -403,7 +403,7 @@ export const resetOpenAIClient = async (
         currentClient = undefined;
         currentClientState = { status: 'uninitialized' };
         
-        await vscode.window.showInformationMessage('OpenAI client reset successfully');
+        await vscode.window.showInformationMessage('OpenAI client reset successfully', { modal: true });
         
         return createSuccessResult(undefined, currentClientState);
         
