@@ -285,3 +285,219 @@ const describeScopeApplication = (scope: ConfigurationScope): string => {
             return 'to global settings (with workspace fallback)';
     }
 };
+
+/**
+ * Represents a single streaming theme setting.
+ * Encodes the business rule that each setting must have a type and target.
+ */
+export type StreamingThemeSetting = 
+    | { readonly type: 'selector'; readonly name: string; readonly color: string }
+    | { readonly type: 'token'; readonly scope: string; readonly color: string; readonly fontStyle?: string };
+
+/**
+ * Result of parsing a streaming theme line.
+ * Success contains the parsed setting, failure contains error information.
+ */
+export type StreamingParseResult = 
+    | { readonly success: true; readonly setting: StreamingThemeSetting }
+    | { readonly success: false; readonly error: string; readonly line: string };
+
+/**
+ * Parses a single line from streaming theme generation.
+ * Handles both SELECTOR: and TOKEN: format lines.
+ * 
+ * Business rule: Each line must follow the exact streaming format specification.
+ */
+export const parseStreamingThemeLine = (line: string): StreamingParseResult => {
+    const trimmedLine = line.trim();
+    
+    if (!trimmedLine) {
+        return { 
+            success: false, 
+            error: 'Empty line', 
+            line 
+        };
+    }
+
+    if (trimmedLine.startsWith('SELECTOR:')) {
+        const content = trimmedLine.substring(9); // Remove 'SELECTOR:'
+        const [name, color] = content.split('=');
+        
+        if (!name || !color) {
+            return { 
+                success: false, 
+                error: 'Invalid selector format - expected name=color', 
+                line 
+            };
+        }
+
+        if (!validateStreamingColor(color)) {
+            return { 
+                success: false, 
+                error: 'Invalid color format', 
+                line 
+            };
+        }
+
+        return {
+            success: true,
+            setting: {
+                type: 'selector',
+                name: name.trim(),
+                color: color.trim()
+            }
+        };
+    }
+
+    if (trimmedLine.startsWith('TOKEN:')) {
+        const content = trimmedLine.substring(6); // Remove 'TOKEN:'
+        const [scope, colorAndStyle] = content.split('=');
+        
+        if (!scope || !colorAndStyle) {
+            return { 
+                success: false, 
+                error: 'Invalid token format - expected scope=color[,fontStyle]', 
+                line 
+            };
+        }
+
+        const [color, fontStyle] = colorAndStyle.split(',');
+        
+        if (!validateStreamingColor(color)) {
+            return { 
+                success: false, 
+                error: 'Invalid color format', 
+                line 
+            };
+        }
+
+        return {
+            success: true,
+            setting: {
+                type: 'token',
+                scope: scope.trim(),
+                color: color.trim(),
+                fontStyle: fontStyle?.trim()
+            }
+        };
+    }
+
+    return { 
+        success: false, 
+        error: 'Line must start with SELECTOR: or TOKEN:', 
+        line 
+    };
+};
+
+/**
+ * Validates that a color string meets basic format requirements.
+ * Reuses hex validation logic for streaming theme colors.
+ */
+const validateStreamingColor = (color: string): boolean => {
+    // Hex color validation (3, 6, or 8 digit hex codes)
+    const hexPattern = /^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$|^#[0-9a-fA-F]{8}$/;
+    const isValidHex = hexPattern.test(color);
+    const isValidKeyword = ['transparent', 'inherit', 'initial', 'unset'].includes(color.toLowerCase());
+    
+    return isValidHex || isValidKeyword;
+};
+
+/**
+ * Applies a single streaming theme setting immediately.
+ * Enables real-time theme updates as settings are received.
+ */
+export const applyStreamingThemeSetting = async (
+    setting: StreamingThemeSetting,
+    hasWorkspaceFolders: boolean
+): Promise<ThemeApplicationResult> => {
+    try {
+        const config = vscode.workspace.getConfiguration();
+        const scope = determineConfigurationScope(hasWorkspaceFolders);
+        const targets = getConfigurationTargets(scope);
+
+        if (setting.type === 'selector') {
+            // Apply color customization incrementally
+            for (const target of targets) {
+                try {
+                    const existingColors = config.get('workbench.colorCustomizations') as Record<string, string> || {};
+                    const updatedColors = {
+                        ...existingColors,
+                        [setting.name]: setting.color
+                    };
+                    
+                    await config.update('workbench.colorCustomizations', updatedColors, target);
+                    
+                    // Success on first target - determine which scope was used
+                    const appliedScope: ConfigurationScope = targets.length === 1 
+                        ? (target === vscode.ConfigurationTarget.Workspace 
+                            ? { type: 'workspace', target: vscode.ConfigurationTarget.Workspace }
+                            : { type: 'global', target: vscode.ConfigurationTarget.Global })
+                        : { type: 'both', primary: targets[0], fallback: targets[1] };
+                    
+                    return createSuccessResult(appliedScope);
+                } catch (error) {
+                    // Continue to next target
+                    continue;
+                }
+            }
+        } else if (setting.type === 'token') {
+            // Apply token color customization incrementally
+            for (const target of targets) {
+                try {
+                    const existingTokens = config.get('editor.tokenColorCustomizations') as Record<string, unknown> || {};
+                    const existingRules = (existingTokens.textMateRules as any[]) || [];
+                    
+                    // Create new token rule
+                    const newRule = {
+                        scope: setting.scope,
+                        settings: {
+                            foreground: setting.color,
+                            ...(setting.fontStyle && { fontStyle: setting.fontStyle })
+                        }
+                    };
+                    
+                    // Update existing rules or add new one
+                    const updatedRules = [...existingRules.filter(rule => rule.scope !== setting.scope), newRule];
+                    const updatedTokens = {
+                        ...existingTokens,
+                        textMateRules: updatedRules
+                    };
+                    
+                    await config.update('editor.tokenColorCustomizations', updatedTokens, target);
+                    
+                    // Success on first target
+                    const appliedScope: ConfigurationScope = targets.length === 1 
+                        ? (target === vscode.ConfigurationTarget.Workspace 
+                            ? { type: 'workspace', target: vscode.ConfigurationTarget.Workspace }
+                            : { type: 'global', target: vscode.ConfigurationTarget.Global })
+                        : { type: 'both', primary: targets[0], fallback: targets[1] };
+                    
+                    return createSuccessResult(appliedScope);
+                } catch (error) {
+                    // Continue to next target
+                    continue;
+                }
+            }
+        }
+
+        // All targets failed
+        return createFailureResult(
+            createThemeApplicationError(
+                `Failed to apply ${setting.type} setting: ${setting.type === 'selector' ? setting.name : setting.scope}`,
+                new Error('All configuration targets failed'),
+                true,
+                'Check VS Code permissions and try restarting the editor'
+            )
+        );
+
+    } catch (error) {
+        return createFailureResult(
+            createThemeApplicationError(
+                `Error applying streaming theme setting`,
+                error,
+                true,
+                'Check the setting format and try again'
+            )
+        );
+    }
+};

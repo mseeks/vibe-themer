@@ -1,26 +1,33 @@
 import * as vscode from 'vscode';
-import { ensureOpenAIClient, getOpenAIClientState } from './openaiService';
-import { applyThemeCustomizations } from './themeCore';
+import { ensureOpenAIClient as ensureOpenAIClientCore, getCurrentClientState } from './openaiCore';
+import { applyStreamingThemeSetting, parseStreamingThemeLine, StreamingThemeSetting } from './themeCore';
 import { getSelectedOpenAIModel } from '../commands/modelSelectCommand';
 import { OpenAIServiceResult, OpenAIServiceError } from '../types/theme';
 import * as fs from "fs";
 import * as path from "path";
 
 /**
- * Shows a success popup after theme application with user recap and reset option.
- * Provides clear feedback about what was generated and an obvious way to delete the theme.
+ * Shows a success popup after streaming theme application with recap and reset option.
+ * Provides clear feedback about the streaming process and an obvious way to delete the theme.
  */
-async function showThemeSuccessPopup(
+async function showStreamingThemeSuccessPopup(
     themeDescription: string, 
+    settingsApplied: number,
     context: vscode.ExtensionContext
 ): Promise<void> {
-    const message = `✅ Theme successfully generated and applied!\n\nYour theme: "${themeDescription}"`;
+    const completenessMessage = settingsApplied < 50 
+        ? "⚠️ Partial theme generated - you may want to regenerate for more comprehensive styling"
+        : settingsApplied < 80
+        ? "✅ Good theme coverage - most UI elements should be styled"
+        : "🎨 Comprehensive theme generated - all major UI areas styled!";
+        
+    const message = `✅ Theme streaming complete!\n\nYour theme: "${themeDescription}"\nApplied ${settingsApplied} settings in real-time\n\n${completenessMessage}`;
     
     const action = await vscode.window.showInformationMessage(
         message,
         {
             modal: false,
-            detail: 'Your VS Code theme has been updated with AI-generated colors based on your description.'
+            detail: 'Your VS Code theme was updated live as AI generated each color setting. The theme has been fully applied!'
         },
         'Delete Theme (Resets to Default)'
     );
@@ -32,29 +39,29 @@ async function showThemeSuccessPopup(
 }
 
 /**
- * Orchestrates the theme generation workflow: prompts user, calls OpenAI, parses response, applies theme.
+ * Orchestrates the streaming theme generation workflow: prompts user, calls OpenAI with streaming, applies theme settings in real-time.
  * 
- * This function demonstrates how to integrate with our new OpenAI service architecture.
- * It handles all progress, error, and user messaging using the enhanced patterns from
- * our functional refactoring while maintaining the same external interface.
+ * This function demonstrates real-time theme application as the AI generates settings.
+ * Each setting is applied immediately as it's received, providing dynamic visual feedback.
  * 
- * Updates the lastGeneratedThemeRef with the new theme.
+ * Updates the lastGeneratedThemeRef with the accumulated theme data.
  */
 export async function runThemeGenerationWorkflow(
     context: vscode.ExtensionContext,
     lastGeneratedThemeRef: { current?: any }
 ) {
     // Use the enhanced OpenAI client with better error handling and state management
-    const openai = await ensureOpenAIClient(context);
-    if (!openai) {
+    const openaiResult = await ensureOpenAIClientCore(context);
+    if (!openaiResult.success) {
         // The ensureOpenAIClient already handled user interaction and error display
-        // We can optionally provide additional context based on the client state
-        const clientState = getOpenAIClientState();
+        const clientState = getCurrentClientState();
         if (clientState.status === 'error') {
             console.error('Theme generation aborted due to OpenAI client error:', clientState.error);
         }
         return;
     }
+
+    const openai = openaiResult.data;
 
     const themeDescription = await vscode.window.showInputBox({
         prompt: 'Describe the theme you want (e.g., "warm and cozy", "futuristic dark blue")',
@@ -67,85 +74,154 @@ export async function runThemeGenerationWorkflow(
 
     const selectedModel = getSelectedOpenAIModel(context) || "gpt-4.1-mini";
 
+    // Streaming theme data accumulation
+    const accumulatedSelectors: Record<string, string> = {};
+    const accumulatedTokenColors: any[] = [];
+    let settingsApplied = 0;
+    const hasWorkspaceFolders = (vscode.workspace.workspaceFolders?.length ?? 0) > 0;
+
     try {
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: "Generating theme colors...",
+            title: "Generating comprehensive theme...",
             cancellable: false
         }, async (progress) => {
-            progress.report({ message: "Generating selectors and token colors..." });
+            progress.report({ message: "Starting theme generation..." });
             
-            // Generate theme with OpenAI
-            const combinedPrompt = fs.readFileSync(
-                path.join(context.extensionUri.fsPath, 'src', 'prompts', 'combinedThemePrompt.txt'),
+            // Read streaming prompt
+            const streamingPrompt = fs.readFileSync(
+                path.join(context.extensionUri.fsPath, 'src', 'prompts', 'streamingThemePrompt.txt'),
                 'utf8'
             );
-            const completion = await openai.chat.completions.create({
+
+            // Create streaming completion with increased token limit for comprehensive themes
+            const stream = await openai.chat.completions.create({
                 model: selectedModel,
                 messages: [
-                    { role: "system", content: combinedPrompt },
+                    { role: "system", content: streamingPrompt },
                     { role: "user", content: `Theme description: ${themeDescription}` }
-                ]
+                ],
+                stream: true,
+                max_tokens: 6000, // Increased for comprehensive themes (80-150+ settings)
+                temperature: 0.5  // Reduced for more consistent output
             });
-            
-            const responseText = completion.choices[0]?.message?.content?.trim();
-            if (!responseText) throw new Error('No response from LLM.');
-            
-            let parsed;
-            try {
-                parsed = JSON.parse(responseText);
-            } catch (e) {
-                throw new Error('Failed to parse LLM response as JSON.');
+
+            let buffer = '';
+            let errorCount = 0;
+            const maxErrors = 5; // Allow some failed settings before giving up
+
+            for await (const chunk of stream) {
+                const content = chunk.choices[0]?.delta?.content || '';
+                buffer += content;
+
+                // Process complete lines
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+
+                    const parseResult = parseStreamingThemeLine(line);
+                    
+                    if (parseResult.success) {
+                        const setting = parseResult.setting;
+                        
+                        // Apply the setting immediately
+                        const applyResult = await applyStreamingThemeSetting(setting, hasWorkspaceFolders);
+                        
+                        if (applyResult.success) {
+                            settingsApplied++;
+                            
+                            // Accumulate for theme data structure
+                            if (setting.type === 'selector') {
+                                accumulatedSelectors[setting.name] = setting.color;
+                            } else if (setting.type === 'token') {
+                                accumulatedTokenColors.push({
+                                    scope: setting.scope,
+                                    settings: {
+                                        foreground: setting.color,
+                                        ...(setting.fontStyle && { fontStyle: setting.fontStyle })
+                                    }
+                                });
+                            }
+                            
+                            // Update progress with completion tracking
+                            const settingName = setting.type === 'selector' ? setting.name : setting.scope;
+                            const progressMessage = settingsApplied < 50 
+                                ? `Applied ${settingName} (${settingsApplied}/100+ settings)`
+                                : settingsApplied < 100
+                                ? `Applied ${settingName} (${settingsApplied}/100+ settings - making good progress)`
+                                : `Applied ${settingName} (${settingsApplied} settings - comprehensive theme!)`;
+                                
+                            progress.report({ 
+                                message: progressMessage
+                            });
+                        } else {
+                            errorCount++;
+                            console.warn(`Failed to apply setting: ${line}`, applyResult.error);
+                            
+                            if (errorCount >= maxErrors) {
+                                throw new Error(`Too many failed settings (${errorCount}). Last error: ${applyResult.error.message}`);
+                            }
+                        }
+                    } else {
+                        errorCount++;
+                        console.warn(`Failed to parse line: ${line}`, parseResult.error);
+                        
+                        if (errorCount >= maxErrors) {
+                            throw new Error(`Too many parsing errors (${errorCount}). Last error: ${parseResult.error}`);
+                        }
+                    }
+                }
             }
-            
-            // Validate selectors
-            const selectors = parsed.selectors;
-            if (!selectors || typeof selectors !== 'object') {
-                throw new Error('Selector color mapping missing or invalid in LLM response.');
+
+            // Process any remaining content in buffer
+            if (buffer.trim()) {
+                const parseResult = parseStreamingThemeLine(buffer.trim());
+                if (parseResult.success) {
+                    const applyResult = await applyStreamingThemeSetting(parseResult.setting, hasWorkspaceFolders);
+                    if (applyResult.success) {
+                        settingsApplied++;
+                        const setting = parseResult.setting;
+                        if (setting.type === 'selector') {
+                            accumulatedSelectors[setting.name] = setting.color;
+                        } else if (setting.type === 'token') {
+                            accumulatedTokenColors.push({
+                                scope: setting.scope,
+                                settings: {
+                                    foreground: setting.color,
+                                    ...(setting.fontStyle && { fontStyle: setting.fontStyle })
+                                }
+                            });
+                        }
+                    }
+                }
             }
-            
-            // Validate tokenColors
-            const tokenColors = Array.isArray(parsed.tokenColors) ? parsed.tokenColors : [];
-            
-            progress.report({ message: "Applying theme..." });
-            
-            // Extract core colors from selectors for theme data structure
-            const coreColors = {
-                primary: selectors["activityBar.background"] || "#007acc",
-                secondary: selectors["statusBar.background"] || "#444444",
-                accent: selectors["activityBarBadge.background"] || "#ff8c00",
-                background: selectors["editor.background"] || "#1e1e1e",
-                foreground: selectors["editor.foreground"] || "#d4d4d4"
-            };
-            
-            lastGeneratedThemeRef.current = {
-                name: `Custom Theme - ${themeDescription}`,
-                description: `Theme generated from: "${themeDescription}"`,
-                colors: coreColors,
-                tokenColors
-            };
-            
-            // Apply theme with silent notifications to avoid double error dialogs
-            // We'll handle success/error notifications in the outer try-catch
-            const result = await applyThemeCustomizations(
-                selectors,
-                tokenColors,
-                themeDescription,
-                true // suppressNotifications = true
-            );
-            
-            // If theme application failed, throw an error to be caught by outer try-catch
-            if (!result.success) {
-                throw new Error(result.error.message);
-            }
+
+            progress.report({ message: `Completed! Applied ${settingsApplied} theme settings` });
         });
 
-        // Show success popup with theme recap and reset option
-        await showThemeSuccessPopup(themeDescription, context);
+        // Build theme data structure for reference
+        const coreColors = {
+            primary: accumulatedSelectors["activityBar.background"] || "#007acc",
+            secondary: accumulatedSelectors["statusBar.background"] || "#444444", 
+            accent: accumulatedSelectors["activityBarBadge.background"] || "#ff8c00",
+            background: accumulatedSelectors["editor.background"] || "#1e1e1e",
+            foreground: accumulatedSelectors["editor.foreground"] || "#d4d4d4"
+        };
+
+        lastGeneratedThemeRef.current = {
+            name: `Custom Theme - ${themeDescription}`,
+            description: `Theme generated from: "${themeDescription}"`,
+            colors: coreColors,
+            tokenColors: accumulatedTokenColors
+        };
+
+        // Show success popup with streaming results
+        await showStreamingThemeSuccessPopup(themeDescription, settingsApplied, context);
         
     } catch (error: any) {
-        // Enhanced error handling using our functional architecture patterns
-        // We categorize errors and provide more specific user feedback
+        // Enhanced error handling for streaming
         const isNetworkError = error.message.includes('fetch') || 
                                error.message.includes('network') || 
                                error.message.includes('connection');
@@ -154,41 +230,44 @@ export async function runThemeGenerationWorkflow(
                           error.message.includes('429') || 
                           error.message.includes('quota');
         
-        const isParsingError = error.message.includes('parse') || 
-                              error.message.includes('JSON') || 
-                              error.message.includes('Invalid');
+        const isStreamingError = error.message.includes('stream') || 
+                                error.message.includes('parsing') ||
+                                error.message.includes('settings');
 
         // Provide contextual error messages based on error type
         let errorPrefix: string;
         let suggestedAction: string | undefined;
 
         if (isNetworkError) {
-            errorPrefix = 'Network error while communicating with OpenAI';
+            errorPrefix = 'Network error during streaming theme generation';
             suggestedAction = 'Check your internet connection and try again';
         } else if (isAPIError) {
-            errorPrefix = 'OpenAI API error';
+            errorPrefix = 'OpenAI API error during streaming';
             suggestedAction = 'Check your API key validity and quota limits';
-        } else if (isParsingError) {
-            errorPrefix = 'Could not generate a valid color theme';
-            suggestedAction = 'Try rephrasing your theme description or try again';
+        } else if (isStreamingError) {
+            errorPrefix = 'Error during theme streaming';
+            suggestedAction = `${settingsApplied} settings were applied before the error. Try running again to continue.`;
         } else {
-            errorPrefix = 'Theme generation failed';
+            errorPrefix = 'Streaming theme generation failed';
             suggestedAction = 'Please try again or contact support if the issue persists';
         }
 
         const fullMessage = suggestedAction 
-            ? `${errorPrefix}: ${error.message}. ${suggestedAction}.`
+            ? `${errorPrefix}: ${error.message}. ${suggestedAction}`
             : `${errorPrefix}: ${error.message}`;
 
         vscode.window.showErrorMessage(fullMessage);
         
         // Log detailed error information for debugging
-        console.error('Theme generation workflow error:', {
+        console.error('Streaming theme generation error:', {
             originalError: error,
-            errorType: isNetworkError ? 'network' : isAPIError ? 'api' : isParsingError ? 'parsing' : 'unknown',
-            clientState: getOpenAIClientState(),
+            errorType: isNetworkError ? 'network' : isAPIError ? 'api' : isStreamingError ? 'streaming' : 'unknown',
+            clientState: getCurrentClientState(),
             themeDescription,
-            selectedModel
+            selectedModel,
+            settingsApplied,
+            accumulatedSelectors: Object.keys(accumulatedSelectors).length,
+            accumulatedTokenColors: accumulatedTokenColors.length
         });
     }
 }
