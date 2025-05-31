@@ -7,6 +7,43 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
+ * Handles user choice when theme generation is cancelled with partial results.
+ * Offers to keep the partial theme or reset to the previous state.
+ */
+async function handleCancellationChoice(
+    settingsApplied: number,
+    themeDescription: string
+): Promise<'keep' | 'reset'> {
+    if (settingsApplied === 0) {
+        // No settings applied, just acknowledge cancellation
+        await vscode.window.showInformationMessage(
+            '🚫 Theme generation cancelled. No changes were made.',
+            { modal: true }
+        );
+        return 'keep'; // Nothing to reset
+    }
+
+    const message = `🛑 Theme generation was cancelled after applying ${settingsApplied} settings.
+
+Would you like to keep the partial theme or reset to your previous state?
+
+Keep: Maintain the ${settingsApplied} color settings that were already applied
+Reset: Remove all applied settings and return to your original theme`;
+
+    const choice = await vscode.window.showWarningMessage(
+        message,
+        {
+            modal: true,
+            detail: 'The partial theme may look incomplete since not all UI elements were styled.'
+        },
+        'Keep Partial Theme',
+        'Reset to Original'
+    );
+
+    return choice === 'Reset to Original' ? 'reset' : 'keep';
+}
+
+/**
  * Shows a success popup after streaming theme application with recap and reset option.
  * Emphasizes the importance of using the reset command to remove the theme.
  */
@@ -89,14 +126,15 @@ export async function runThemeGenerationWorkflow(
     const accumulatedSelectors: Record<string, string> = {};
     const accumulatedTokenColors: any[] = [];
     let settingsApplied = 0;
+    let wasCancelled = false;
     const hasWorkspaceFolders = (vscode.workspace.workspaceFolders?.length ?? 0) > 0;
 
     try {
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: "🎨 Creating your perfect theme...",
-            cancellable: false
-        }, async (progress) => {
+            cancellable: true
+        }, async (progress, cancellationToken) => {
             progress.report({ message: "🤖 AI is analyzing your description..." });
             
             // Read streaming prompt
@@ -120,6 +158,11 @@ export async function runThemeGenerationWorkflow(
             const maxErrors = 5; // Allow some failed settings before giving up
 
             for await (const chunk of stream) {
+                // Check for cancellation at the start of each chunk
+                if (cancellationToken.isCancellationRequested) {
+                    break;
+                }
+
                 const content = chunk.choices[0]?.delta?.content || '';
                 buffer += content;
 
@@ -129,6 +172,11 @@ export async function runThemeGenerationWorkflow(
 
                 for (const line of lines) {
                     if (!line.trim()) continue;
+                    
+                    // Check for cancellation before processing each line
+                    if (cancellationToken.isCancellationRequested) {
+                        break;
+                    }
 
                     const parseResult = parseStreamingThemeLine(line);
                     
@@ -182,10 +230,28 @@ export async function runThemeGenerationWorkflow(
                         }
                     }
                 }
+                
+                // Break out of chunk loop if cancelled
+                if (cancellationToken.isCancellationRequested) {
+                    break;
+                }
             }
 
-            // Process any remaining content in buffer
-            if (buffer.trim()) {
+            // Handle cancellation if requested
+            if (cancellationToken.isCancellationRequested) {
+                wasCancelled = true;
+                const choice = await handleCancellationChoice(settingsApplied, themeDescription);
+                
+                if (choice === 'reset') {
+                    // Execute the reset theme command to remove all applied settings
+                    await vscode.commands.executeCommand('dynamicThemeChanger.resetTheme');
+                    return; // Exit early, no success popup needed
+                }
+                // If 'keep', continue with normal completion flow
+            }
+
+            // Process any remaining content in buffer (only if not cancelled)
+            if (buffer.trim() && !cancellationToken.isCancellationRequested) {
                 const parseResult = parseStreamingThemeLine(buffer.trim());
                 if (parseResult.success) {
                     const applyResult = await applyStreamingThemeSetting(parseResult.setting, hasWorkspaceFolders);
@@ -207,10 +273,15 @@ export async function runThemeGenerationWorkflow(
                 }
             }
 
-            progress.report({ message: `🎉 Theme complete! Applied ${settingsApplied} color settings to transform your VS Code` });
+            // Update final progress message based on whether it was cancelled
+            const finalMessage = wasCancelled
+                ? `🛑 Theme generation cancelled. Kept ${settingsApplied} applied settings.`
+                : `🎉 Theme complete! Applied ${settingsApplied} color settings to transform your VS Code`;
+            
+            progress.report({ message: finalMessage });
         });
 
-        // Build theme data structure for reference
+        // Build theme data structure for reference (always build it, even if cancelled)
         const coreColors = {
             primary: accumulatedSelectors["activityBar.background"] || "#007acc",
             secondary: accumulatedSelectors["statusBar.background"] || "#444444", 
@@ -226,8 +297,10 @@ export async function runThemeGenerationWorkflow(
             tokenColors: accumulatedTokenColors
         };
 
-        // Show success popup with streaming results
-        await showStreamingThemeSuccessPopup(themeDescription, settingsApplied, context);
+        // Show success popup only if generation completed normally (not cancelled)
+        if (!wasCancelled) {
+            await showStreamingThemeSuccessPopup(themeDescription, settingsApplied, context);
+        }
         
     } catch (error: any) {
         // Enhanced error handling for streaming
