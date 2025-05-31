@@ -26,7 +26,6 @@
     "onCommand:dynamicThemeChanger.changeTheme",
     "onCommand:dynamicThemeChanger.clearApiKey",
     "onCommand:dynamicThemeChanger.resetTheme",
-    "onCommand:dynamicThemeChanger.exportTheme",
     "onCommand:dynamicThemeChanger.selectModel",
     "onCommand:dynamicThemeChanger.resetModel"
   ],
@@ -44,10 +43,6 @@
       {
         "command": "dynamicThemeChanger.resetTheme",
         "title": "VibeThemer: Reset Theme Customizations"
-      },
-      {
-        "command": "dynamicThemeChanger.exportTheme",
-        "title": "VibeThemer: Export Current Theme"
       },
       {
         "command": "dynamicThemeChanger.selectModel",

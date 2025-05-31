@@ -11,7 +11,6 @@ A Visual Studio Code extension that uses AI to generate and apply beautiful, coh
 - **Syntax highlighting**: AI also generates matching syntax token colors for code.
 - **Secure API key storage**: Your OpenAI API key is stored securely in VS Code's secret storage.
 - **Easy key management**: Commands to store, clear, and manage your API key.
-- **Export themes**: Save your generated theme as a JSON file for use in your own VS Code theme extension.
 - **Model selection**: Choose which OpenAI model to use for theme generation.
 - **Reset**: Instantly reset all theme customizations and return to your default theme.
 
@@ -36,7 +35,6 @@ A Visual Studio Code extension that uses AI to generate and apply beautiful, coh
 | `dynamicThemeChanger.changeTheme` | Prompts for a theme description and changes your theme   |
 | `dynamicThemeChanger.clearApiKey` | Clears your stored OpenAI API key                        |
 | `dynamicThemeChanger.resetTheme`  | Resets all theme customizations to restore default theme |
-| `dynamicThemeChanger.exportTheme` | Exports the current theme as a JSON file                 |
 | `dynamicThemeChanger.selectModel` | Select which OpenAI model to use                         |
 | `dynamicThemeChanger.resetModel`  | Reset the selected OpenAI model                          |
 
@@ -46,7 +44,6 @@ A Visual Studio Code extension that uses AI to generate and apply beautiful, coh
 2. The extension sends your description to OpenAI, requesting a palette with 5 colors: primary, secondary, accent, background, foreground.
 3. The AI response is parsed and normalized for VS Code.
 4. The extension applies these colors to all major UI elements and generates syntax highlighting token colors.
-5. You can export your theme for use in your own extension or share it with others.
 
 ## Privacy & Security
 
@@ -66,7 +63,7 @@ A Visual Studio Code extension that uses AI to generate and apply beautiful, coh
 - Initial release as VibeThemer (formerly Dynamic Theme Changer)
 - AI-powered theme and syntax color generation
 - Secure API key storage and management
-- Theme export and reset functionality
+- Theme reset functionality
 - OpenAI model selection support
 
 ---
