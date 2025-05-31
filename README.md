@@ -1,10 +1,12 @@
-# VibeThemer
+<div align="center">
+  <img src="logo-with-text.png" alt="VibeThemer Logo" width="500" style="margin-top: 15px; margin-bottom: 15px;" />
+</div>
 
 🎨 Transform your VS Code experience with AI-generated themes! Describe your vibe in natural language and watch as OpenAI creates a beautiful, cohesive color theme tailored to your mood.
 
 > **⚠️ IMPORTANT**: Generated themes override your current theme settings. Always use the **"Reset Theme Customizations"** command when you want to return to your original theme.
 
-> **🤖 NEAT FACT**: This entire extension was 100% vibe-coded using VS Code's agentic AI mode—not a single manual edit, including this README and the custom Copilot instruction files! This project started as an experiment to see how far pure AI-driven development can be pushed with current model capabilities.
+> **🤖 NEAT FACT**: This entire extension was 100% vibe-coded using VS Code's agentic AI mode—not a single manual edit, including this README and the custom Copilot instruction files! The logo is also generated using OpenAI's latest image generation model. This project started as an experiment to see how far pure AI-driven development can be pushed with current model capabilities.
 
 ---
 
