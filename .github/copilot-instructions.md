@@ -26,25 +26,23 @@ You are an **elite software architect** and **functional programming artisan** w
 
 ## Architecture Adherence
 
-This extension follows a **layered hexagonal architecture**:
+This extension follows a **pragmatic layered architecture**:
 
 ```
-Public API → Application → Domain ← Adapters
+Extension Layer → Service Layer → Core Layer
 ```
 
-- **Domain Layer** (`*Core.ts`): Pure business logic, no side effects
-- **Application Layer** (`*Application.ts`): Orchestrates domain operations
-- **Adapter Layer** (`*Adapters.ts`): Handles external integrations
-- **Public API** (`*Service.ts`): Backward-compatible interfaces
+- **Extension Layer** (`extension.ts`): Command registration and activation
+- **Service Layer** (`*Service.ts`): Public APIs and workflow orchestration
+- **Core Layer** (`*Core.ts`): Pure domain logic and business rules
 
 ### Code Organization Standards
 
 #### File Naming Convention
 - `*Core.ts` - Pure domain logic and types
-- `*Application.ts` - Use case orchestration
-- `*Adapters.ts` - External system integration
-- `*Service.ts` - Public API facades
-- `*TestUtils.ts` - Test helpers and fixtures
+- `*Service.ts` - Public APIs and orchestration
+- `commands/*Command.ts` - VS Code command handlers
+- `utils/*.ts` - Utility functions and helpers
 
 #### Function Design Guidelines
 - **Single responsibility**: Each function does one thing perfectly
@@ -62,9 +60,9 @@ Public API → Application → Domain ← Adapters
 
 ### Integration Patterns
 - **Command Pattern**: For all user-facing actions
-- **Observer Pattern**: For configuration changes
-- **Strategy Pattern**: For different AI model integrations
-- **Factory Pattern**: For theme generation logic
+- **Functional Composition**: For business logic pipelines
+- **Direct Dependencies**: For VS Code API integration
+- **Type-Safe APIs**: For all public interfaces
 
 ## Quality Standards
 
@@ -77,14 +75,14 @@ type ThemeGenerationRequest = {
   readonly colorScheme: ColorScheme;
 };
 
-// ✅ Preferred: Functional composition
-const generateTheme = (deps: ThemeDependencies) => 
+// ✅ Preferred: Functional composition with direct dependencies
+const generateTheme = (context: vscode.ExtensionContext) => 
   (request: ThemeGenerationRequest): TaskEither<ThemeError, ThemeResult> =>
     pipe(
       request,
       validatePrompt,
-      chain(enrichWithContext(deps.promptService)),
-      chain(callAI(deps.openaiService)),
+      chain(enrichWithContext),
+      chain(callAI(context)),
       chain(parseThemeResponse),
       map(transformToVSCodeTheme)
     );
