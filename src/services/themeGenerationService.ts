@@ -7,6 +7,31 @@ import * as fs from "fs";
 import * as path from "path";
 
 /**
+ * Shows a success popup after theme application with user recap and reset option.
+ * Provides clear feedback about what was generated and an obvious way to delete the theme.
+ */
+async function showThemeSuccessPopup(
+    themeDescription: string, 
+    context: vscode.ExtensionContext
+): Promise<void> {
+    const message = `✅ Theme successfully generated and applied!\n\nYour theme: "${themeDescription}"`;
+    
+    const action = await vscode.window.showInformationMessage(
+        message,
+        {
+            modal: false,
+            detail: 'Your VS Code theme has been updated with AI-generated colors based on your description.'
+        },
+        'Delete Theme (Resets to Default)'
+    );
+
+    if (action === 'Delete Theme (Resets to Default)') {
+        // Execute the reset theme command
+        await vscode.commands.executeCommand('dynamicThemeChanger.resetTheme');
+    }
+}
+
+/**
  * Orchestrates the theme generation workflow: prompts user, calls OpenAI, parses response, applies theme.
  * 
  * This function demonstrates how to integrate with our new OpenAI service architecture.
@@ -114,6 +139,9 @@ export async function runThemeGenerationWorkflow(
                 throw new Error(result.error.message);
             }
         });
+
+        // Show success popup with theme recap and reset option
+        await showThemeSuccessPopup(themeDescription, context);
         
     } catch (error: any) {
         // Enhanced error handling using our functional architecture patterns
