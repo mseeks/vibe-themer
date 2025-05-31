@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo-with-text.png" alt="VibeThemer Logo" width="500" style="margin-top: 15px; margin-bottom: 15px;" />
+  <img src="logo-with-text.png" alt="Vibe Themer Logo" width="500" style="margin-top: 15px; margin-bottom: 15px;" />
 </div>
 
 🎨 Transform your VS Code experience with AI-generated themes! Describe your vibe in natural language and watch as OpenAI creates a beautiful, cohesive color theme tailored to your mood.
@@ -28,40 +28,40 @@
 
 ## 🚀 Quick Start
 
-1. **Install** VibeThemer from the VS Code Marketplace
+1. **Install** Vibe Themer from the VS Code Marketplace
 2. **Generate your first theme**: 
    - Open Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
-   - Run **"VibeThemer: Change Theme"**
+   - Run **"Vibe Themer: Change Theme"**
    - Enter your OpenAI API key when prompted (stored securely, only needed once)
    - Describe your ideal theme: `"warm sunset over mountains"`, `"minimal dark forest"`, or `"vibrant retro 80s"`
 3. **Watch the magic**: Your theme applies in real-time as AI generates each color setting
-4. **Want to change back?**: Always use **"VibeThemer: Reset Theme Customizations"** to return to your original theme
+4. **Want to change back?**: Always use **"Vibe Themer: Reset Theme Customizations"** to return to your original theme
 
 > **💡 Pro tip**: Be descriptive! Instead of "dark theme", try "mysterious midnight with purple accents" for better results.
 
 ## 📋 Commands
 
-| Command                                    | Description                                                  |
-| ------------------------------------------ | ------------------------------------------------------------ |
-| **VibeThemer: Change Theme**               | 🎨 Generate a new AI theme from your description              |
-| **VibeThemer: Reset Theme Customizations** | 🔄 **Important:** Remove generated theme and restore defaults |
-| **VibeThemer: Clear OpenAI API Key**       | 🔑 Remove your stored API key                                 |
-| **VibeThemer: Select OpenAI Model**        | ⚙️ Choose which AI model to use (GPT-4, GPT-3.5, etc.)        |
-| **VibeThemer: Reset Model Selection**      | 🔧 Reset to default AI model                                  |
+| Command                                   | Description                                                  |
+| ----------------------------------------- | ------------------------------------------------------------ |
+| **Vibe Themer: Change Theme**               | 🎨 Generate a new AI theme from your description              |
+| **Vibe Themer: Reset Theme Customizations** | 🔄 **Important:** Remove generated theme and restore defaults |
+| **Vibe Themer: Clear OpenAI API Key**       | 🔑 Remove your stored API key                                 |
+| **Vibe Themer: Select OpenAI Model**        | ⚙️ Choose which AI model to use (GPT-4, GPT-3.5, etc.)        |
+| **Vibe Themer: Reset Model Selection**      | 🔧 Reset to default AI model                                  |
 
 ## ⚠️ Theme Management
 
-**IMPORTANT**: VibeThemer works by overriding VS Code's color settings. This means:
+**IMPORTANT**: Vibe Themer works by overriding VS Code's color settings. This means:
 
 - ✅ **Generated themes** apply on top of your current theme
 - ⚠️ **Theme changes persist** until manually removed
 - 🔄 **Always use "Reset Theme Customizations"** to return to your original theme
-- 🚫 **Simply changing themes in VS Code settings won't remove VibeThemer customizations**
+- 🚫 **Simply changing themes in VS Code settings won't remove Vibe Themer customizations**
 
 To switch back to your original theme or try a different base theme:
-1. Run **"VibeThemer: Reset Theme Customizations"** first
+1. Run **"Vibe Themer: Reset Theme Customizations"** first
 2. Then change to your desired theme in VS Code settings
-3. Generate a new VibeThemer theme if desired
+3. Generate a new Vibe Themer theme if desired
 
 ## 🛠️ How It Works
 
@@ -94,7 +94,7 @@ To switch back to your original theme or try a different base theme:
 
 ## 🤖 About This Project
 
-**VibeThemer represents a fascinating experiment in AI-driven development.** This entire extension—every line of code, documentation, architecture decisions, and feature implementations—was crafted using VS Code's agentic AI mode. Not a single manual edit was made.
+**Vibe Themer represents a fascinating experiment in AI-driven development.** This entire extension—every line of code, documentation, architecture decisions, and feature implementations—was crafted using VS Code's agentic AI mode. Not a single manual edit was made.
 
 This project started as a challenge: **How far can pure AI-driven "vibe coding" be pushed with current model capabilities?** The result is a fully functional, polished VS Code extension that demonstrates the remarkable potential of AI-assisted development when given the right tools and context.
 
@@ -105,7 +105,7 @@ This project started as a challenge: **How far can pure AI-driven "vibe coding" 
 - 🔄 **Iterative refinement**: Multiple rounds of AI-guided improvements and polish
 - 📚 **Comprehensive features**: From streaming API integration to secure credential management
 
-*VibeThemer proves that AI can create sophisticated, production-ready software when provided with clear requirements and iterative feedback.*
+*Vibe Themer proves that AI can create sophisticated, production-ready software when provided with clear requirements and iterative feedback.*
 
 ## 📝 Release Notes
 

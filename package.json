@@ -1,13 +1,13 @@
 {
-  "name": "vibethemer",
-  "displayName": "VibeThemer",
+  "name": "vibe-themer",
+  "displayName": "Vibe Themer",
   "description": "🎨 AI-powered VS Code theme generator. Describe your vibe, watch real-time streaming as OpenAI creates comprehensive custom themes with 80-150+ color settings. 🤖 100% vibe-coded using VS Code's agentic AI!",
   "version": "1.0.0",
   "publisher": "vscodethemer",
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vscode-extensions/vibethemer"
+    "url": "https://github.com/mseeks/vibe-themer"
   },
   "engines": {
     "vscode": "^1.68.0"
@@ -35,23 +35,23 @@
     "commands": [
       {
         "command": "dynamicThemeChanger.changeTheme",
-        "title": "VibeThemer: Change Theme"
+        "title": "Vibe Themer: Change Theme"
       },
       {
         "command": "dynamicThemeChanger.clearApiKey",
-        "title": "VibeThemer: Clear OpenAI API Key"
+        "title": "Vibe Themer: Clear OpenAI API Key"
       },
       {
         "command": "dynamicThemeChanger.resetTheme",
-        "title": "VibeThemer: Reset Theme Customizations"
+        "title": "Vibe Themer: Reset Theme Customizations"
       },
       {
         "command": "dynamicThemeChanger.selectModel",
-        "title": "VibeThemer: Select OpenAI Model"
+        "title": "Vibe Themer: Select OpenAI Model"
       },
       {
         "command": "dynamicThemeChanger.resetModel",
-        "title": "VibeThemer: Reset OpenAI Model Selection"
+        "title": "Vibe Themer: Reset OpenAI Model Selection"
       }
     ]
   },
