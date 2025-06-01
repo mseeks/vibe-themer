@@ -2,6 +2,16 @@
   <img src="logo-with-text.png" alt="Vibe Themer Logo" width="500" style="margin-top: 15px; margin-bottom: 15px;" />
 </div>
 
+<div align="center">
+
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/mseeks?style=for-the-badge&logo=github&logoColor=white&label=Sponsor&labelColor=ea4aaa&color=ff69b4)](https://github.com/sponsors/mseeks)
+
+*Love Vibe Themer? Consider sponsoring its development! Your support helps maintain this project and enables new features that make coding even more delightful.* ✨
+
+</div>
+
+---
+
 🎨 Transform your VS Code experience with AI-generated themes! Describe your vibe in natural language and watch as OpenAI creates a beautiful, cohesive color theme tailored to your mood.
 
 > **⚠️ IMPORTANT**: Generated themes override your current theme settings. Always use the **"Reset Theme Customizations"** command when you want to return to your original theme.
