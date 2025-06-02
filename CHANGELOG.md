@@ -2,6 +2,20 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.1] - 2025-06-01
+
+### Improved
+- Optimized extension package size (reduced from 4MB+ to 159KB)
+- Faster marketplace downloads and installation
+- Updated dependencies for better security and compatibility
+- Enhanced code style consistency with ESLint fixes
+- Added GitHub Sponsors integration for project support
+
+### Fixed
+- Corrected OpenAI model reference for better compatibility
+- Removed unused code and files for cleaner distribution
+- Updated VS Code engine compatibility requirements
+
 ## [1.0.0] - 2025-06-01
 
 ### Added
