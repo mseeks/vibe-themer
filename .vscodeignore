@@ -1,7 +1,8 @@
 node_modules/**
 .git/**
 src/**
-!out/**
 *.vsix
 **/*.tsbuildinfo
 .vscode-test/**
+esbuild.js
+tsconfig.json

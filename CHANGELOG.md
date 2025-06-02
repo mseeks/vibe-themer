@@ -2,6 +2,13 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.8] - 2025-06-01
+
+### Fixed
+- **MAJOR FIX**: Added esbuild bundling to include runtime dependencies (openai, zod) in the extension package
+- This resolves the root cause of "command not found" errors where dependencies weren't available in the marketplace version
+- Extension now properly bundles all required dependencies instead of relying on external node_modules
+
 ## [1.0.7] - 2025-06-01
 
 ### Fixed

@@ -2,7 +2,7 @@
   "name": "vibe-themer",
   "displayName": "Vibe Themer",
   "description": "🎨 AI-powered VS Code theme generator. Describe your vibe, watch real-time streaming as OpenAI creates comprehensive custom themes with 80-150+ color settings. 🤖 100% vibe-coded using VS Code's agentic AI!",
-	"version": "1.0.7",
+	"version": "1.0.8",
   "publisher": "mseeks",
   "icon": "icon.png",
   "repository": {
@@ -60,8 +60,9 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "npm run check-types && npm run lint && node ./esbuild.js",
+    "check-types": "tsc --noEmit",
+    "watch": "npm run check-types && node ./esbuild.js --watch",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "vscode-test"
@@ -74,6 +75,7 @@
     "@typescript-eslint/parser": "^7.7.1",
     "@vscode/test-cli": "^0.0.8",
     "@vscode/test-electron": "^2.3.9",
+    "esbuild": "^0.25.5",
     "eslint": "^8.57.0",
     "typescript": "^5.4.5"
   },
