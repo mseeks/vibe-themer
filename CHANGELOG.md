@@ -2,18 +2,14 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-## [1.0.2] - 2024-12-15
+## [1.0.2] - 2025-06-01
 
 ### Fixed
 - **Critical Fix**: Include missing `streamingThemePrompt.txt` file in published extension package
 - Resolved "ENOENT: no such file or directory" error when using theme generation
 - Updated `.vscodeignore` to properly include required prompt files
 
-## [1.0.1] - 2024-12-10
+## [1.0.1] - 2025-06-01
 
 ### Improved
 - Optimized extension package size (reduced from 4MB+ to 159KB)
@@ -27,7 +23,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Removed unused code and files for cleaner distribution
 - Updated VS Code engine compatibility requirements
 
-## [1.0.0] - 2024-12-01
+## [1.0.0] - 2025-06-01
 
 ### Added
 - Initial release of Vibe Themer
