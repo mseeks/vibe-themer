@@ -9,6 +9,9 @@
     "type": "git",
     "url": "https://github.com/mseeks/vibe-themer"
   },
+  "sponsor": {
+    "url": "https://github.com/sponsors/mseeks"
+  },
   "engines": {
     "vscode": "^1.68.0"
   },
