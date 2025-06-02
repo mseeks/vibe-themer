@@ -13,7 +13,7 @@
     "url": "https://github.com/sponsors/mseeks"
   },
   "engines": {
-    "vscode": "^1.68.0"
+    "vscode": "^1.100.0"
   },
   "categories": [
     "Themes",
@@ -25,13 +25,6 @@
     "ai",
     "openai",
     "customization"
-  ],
-  "activationEvents": [
-    "onCommand:vibeThemer.changeTheme",
-    "onCommand:vibeThemer.clearApiKey",
-    "onCommand:vibeThemer.resetTheme",
-    "onCommand:vibeThemer.selectModel",
-    "onCommand:vibeThemer.resetModel"
   ],
   "main": "./out/extension.js",
   "contributes": {
