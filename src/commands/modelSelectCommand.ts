@@ -10,7 +10,8 @@ export async function selectOpenAIModel(context: vscode.ExtensionContext) {
     try {
         const response = await openai.models.list();
         models = response.data
-            .map((m: any) => m.id);
+            .map((m: any) => m.id)
+            .filter((modelId: string) => modelId.toLowerCase().startsWith('gpt'));
     } catch (err: any) {
         vscode.window.showErrorMessage('🔑 Failed to fetch OpenAI models: ' + err.message + '\n\nPlease check your API key and internet connection.', { modal: true });
         return;

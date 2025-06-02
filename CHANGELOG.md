@@ -2,6 +2,13 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.9] - 2025-06-01
+
+### Enhanced
+- **Model Selection Filter**: Added filter to model selection list to only display GPT models
+- Model selector now filters out non-GPT models for a cleaner, more focused selection experience
+- Improved user experience by showing only relevant AI models that begin with "gpt"
+
 ## [1.0.8] - 2025-06-01
 
 ### Fixed
