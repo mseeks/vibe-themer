@@ -24,33 +24,33 @@
     "customization"
   ],
   "activationEvents": [
-    "onCommand:dynamicThemeChanger.changeTheme",
-    "onCommand:dynamicThemeChanger.clearApiKey",
-    "onCommand:dynamicThemeChanger.resetTheme",
-    "onCommand:dynamicThemeChanger.selectModel",
-    "onCommand:dynamicThemeChanger.resetModel"
+    "onCommand:vibeThemer.changeTheme",
+    "onCommand:vibeThemer.clearApiKey",
+    "onCommand:vibeThemer.resetTheme",
+    "onCommand:vibeThemer.selectModel",
+    "onCommand:vibeThemer.resetModel"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "dynamicThemeChanger.changeTheme",
+        "command": "vibeThemer.changeTheme",
         "title": "Vibe Themer: Change Theme"
       },
       {
-        "command": "dynamicThemeChanger.clearApiKey",
+        "command": "vibeThemer.clearApiKey",
         "title": "Vibe Themer: Clear OpenAI API Key"
       },
       {
-        "command": "dynamicThemeChanger.resetTheme",
+        "command": "vibeThemer.resetTheme",
         "title": "Vibe Themer: Reset Theme Customizations"
       },
       {
-        "command": "dynamicThemeChanger.selectModel",
+        "command": "vibeThemer.selectModel",
         "title": "Vibe Themer: Select OpenAI Model"
       },
       {
-        "command": "dynamicThemeChanger.resetModel",
+        "command": "vibeThemer.resetModel",
         "title": "Vibe Themer: Reset OpenAI Model Selection"
       }
     ]

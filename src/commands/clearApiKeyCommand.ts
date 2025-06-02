@@ -24,7 +24,7 @@ export function registerClearApiKeyCommand(
     openaiRef?: { current?: OpenAI }
 ) {
     const clearApiKeyCommand = vscode.commands.registerCommand(
-        'dynamicThemeChanger.clearApiKey', 
+        'vibeThemer.clearApiKey', 
         async () => {
             try {
                 // Use our new architecture for robust credential clearing

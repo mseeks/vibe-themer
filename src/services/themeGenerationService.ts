@@ -72,7 +72,7 @@ async function showStreamingThemeSuccessPopup(
 
     if (action === 'Reset Theme (Remove All Customizations)') {
         // Execute the reset theme command
-        await vscode.commands.executeCommand('dynamicThemeChanger.resetTheme');
+        await vscode.commands.executeCommand('vibeThemer.resetTheme');
     }
 }
 
@@ -244,7 +244,7 @@ export async function runThemeGenerationWorkflow(
                 
                 if (choice === 'reset') {
                     // Execute the reset theme command to remove all applied settings
-                    await vscode.commands.executeCommand('dynamicThemeChanger.resetTheme');
+                    await vscode.commands.executeCommand('vibeThemer.resetTheme');
                     return; // Exit early, no success popup needed
                 }
                 // If 'keep', continue with normal completion flow

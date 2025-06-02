@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
  * Registers the command to reset theme customizations.
  */
 export function registerResetThemeCommand(context: vscode.ExtensionContext, lastGeneratedThemeRef?: { current?: any }) {
-    const resetThemeCommand = vscode.commands.registerCommand('dynamicThemeChanger.resetTheme', async () => {
+    const resetThemeCommand = vscode.commands.registerCommand('vibeThemer.resetTheme', async () => {
         try {
             const config = vscode.workspace.getConfiguration();
             

@@ -33,7 +33,7 @@ interface ThemeData {
 let lastGeneratedTheme: ThemeData | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
-    console.log('Congratulations, your extension "dynamic-theme-changer" is now active!');
+    console.log('Congratulations, your extension "vibe-themer" is now active!');
 
     // Initialize OpenAI client using our enhanced architecture
     // The new system provides better error handling and user experience
@@ -56,7 +56,7 @@ export async function activate(context: vscode.ExtensionContext) {
     openai = getOpenAIClient();
 
     // Register command to change theme based on natural language description
-    let changeThemeCommand = vscode.commands.registerCommand('dynamicThemeChanger.changeTheme', async () => {
+    let changeThemeCommand = vscode.commands.registerCommand('vibeThemer.changeTheme', async () => {
         await runThemeGenerationWorkflow(context, { current: lastGeneratedTheme });
         // Update our local reference after theme generation
         openai = getOpenAIClient();
@@ -71,13 +71,13 @@ export async function activate(context: vscode.ExtensionContext) {
     registerResetThemeCommand(context, { current: lastGeneratedTheme });
 
     // Register command to select OpenAI model
-    let selectModelCommand = vscode.commands.registerCommand('dynamicThemeChanger.selectModel', async () => {
+    let selectModelCommand = vscode.commands.registerCommand('vibeThemer.selectModel', async () => {
         await selectOpenAIModel(context);
     });
     context.subscriptions.push(selectModelCommand);
 
     // Register command to reset OpenAI model selection
-    let resetModelCommand = vscode.commands.registerCommand('dynamicThemeChanger.resetModel', async () => {
+    let resetModelCommand = vscode.commands.registerCommand('vibeThemer.resetModel', async () => {
         await resetOpenAIModel(context);
     });
     context.subscriptions.push(resetModelCommand);
