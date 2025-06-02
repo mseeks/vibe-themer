@@ -120,7 +120,7 @@ export async function runThemeGenerationWorkflow(
         return;
     }
 
-    const selectedModel = getSelectedOpenAIModel(context) || "gpt-4o-mini";
+    const selectedModel = getSelectedOpenAIModel(context) || "gpt-4o";
 
     // Streaming theme data accumulation
     const accumulatedSelectors: Record<string, string> = {};
@@ -171,7 +171,7 @@ export async function runThemeGenerationWorkflow(
                 buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
                 for (const line of lines) {
-                    if (!line.trim()) continue;
+                    if (!line.trim()) {continue;}
                     
                     // Check for cancellation before processing each line
                     if (cancellationToken.isCancellationRequested) {

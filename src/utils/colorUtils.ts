@@ -6,7 +6,7 @@
  * Normalizes a color string to a valid hex format
  */
 export function normalizeColor(color: string): string {
-    if (!color) return '#000000';
+    if (!color) {return '#000000';}
     
     // Clean input
     color = color.trim().replace(/['"]/g, '');
@@ -55,11 +55,11 @@ export function normalizeColor(color: string): string {
 function hslToHex(h: number, s: number, l: number): string {
     h /= 360;
     const hue2rgb = (p: number, q: number, t: number) => {
-        if (t < 0) t += 1;
-        if (t > 1) t -= 1;
-        if (t < 1/6) return p + (q - p) * 6 * t;
-        if (t < 1/2) return q;
-        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        if (t < 0) {t += 1;}
+        if (t > 1) {t -= 1;}
+        if (t < 1/6) {return p + (q - p) * 6 * t;}
+        if (t < 1/2) {return q;}
+        if (t < 2/3) {return p + (q - p) * (2/3 - t) * 6;}
         return p;
     };
     

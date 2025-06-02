@@ -255,9 +255,9 @@ export const initializeOpenAIClient = async (
                 password: true,
                 placeHolder: 'sk-...',
                 validateInput: (value) => {
-                    if (!value) return 'API key is required';
-                    if (!value.startsWith('sk-')) return 'OpenAI API keys start with "sk-"';
-                    if (value.length < 20) return 'API key appears to be too short';
+                    if (!value) {return 'API key is required';}
+                    if (!value.startsWith('sk-')) {return 'OpenAI API keys start with "sk-"';}
+                    if (value.length < 20) {return 'API key appears to be too short';}
                     return undefined;
                 }
             });

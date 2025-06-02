@@ -5,7 +5,7 @@ const MODEL_KEY = 'openaiModel';
 
 export async function selectOpenAIModel(context: vscode.ExtensionContext) {
     const openai = await ensureOpenAIClient(context);
-    if (!openai) return;
+    if (!openai) {return;}
     let models: string[] = [];
     try {
         const response = await openai.models.list();

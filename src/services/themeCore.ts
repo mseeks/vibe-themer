@@ -90,7 +90,7 @@ export const validateThemeCustomizations = (
     // Validate color format (supports 3, 6, and 8-digit hex codes, plus alpha transparency)
     const invalidColors = Object.entries(customizations.colorCustomizations)
         .filter(([_, color]) => {
-            if (typeof color !== 'string') return true;
+            if (typeof color !== 'string') {return true;}
             
             // Allow 3-digit (#rgb), 6-digit (#rrggbb), and 8-digit (#rrggbbaa) hex codes
             // Also allow CSS color keywords like 'transparent'
