@@ -2,6 +2,11 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.6] - 2025-06-01
+
+### Fixed
+- Further refined `.vscodeignore` to a minimal set to ensure correct packaging for marketplace release. This is an attempt to resolve persistent "command not found" errors.
+
 ## [1.0.5] - 2025-06-01
 
 ### Fixed
