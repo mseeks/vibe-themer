@@ -117,17 +117,6 @@ This project started as a challenge: **How far can pure AI-driven "vibe coding" 
 
 *Vibe Themer proves that AI can create sophisticated, production-ready software when provided with clear requirements and iterative feedback.*
 
-## 📝 Release Notes
-
-### 1.0.0 - Initial Release
-- 🎨 AI-powered theme generation with streaming application  
-- 🔐 Secure OpenAI API key management
-- 🌈 Comprehensive UI coverage (80-150+ settings)
-- 💻 Smart syntax highlighting generation
-- ⚙️ Multiple OpenAI model support
-- 🔄 Easy theme reset functionality
-- 📱 Real-time progress tracking and feedback
-
 ---
 
 ## 🎨 Ready to Transform Your Coding Experience?
