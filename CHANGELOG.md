@@ -2,6 +2,12 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.5] - 2025-06-01
+
+### Fixed
+- Resolved issue where compiled output was not included in the VSIX package, causing "command not found" errors in marketplace installs.
+- Updated `.vscodeignore` to correctly include the `out/` directory and remove overly broad `.ts` exclusion.
+
 ## [1.0.4] - 2025-06-01
 
 ### Changed
