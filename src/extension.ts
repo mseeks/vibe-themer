@@ -33,8 +33,6 @@ interface ThemeData {
 let lastGeneratedTheme: ThemeData | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
-    console.log('Congratulations, your extension "vibe-themer" is now active!');
-
     // Initialize OpenAI client using our enhanced architecture
     // The new system provides better error handling and user experience
     const initialized = await initializeOpenAIClient(context);

@@ -1,11 +1,11 @@
 # Change Log
 
-All notable changes to the "Dynamic Theme Changer" extension will be documented in this file.
+All notable changes to the "Vibe Themer" extension will be documented in this file.
 
-## [1.0.0] - 2025-05-17
+## [1.0.0] - 2025-06-01
 
 ### Added
-- Initial release of Dynamic Theme Changer
+- Initial release of Vibe Themer
 - Command to change theme based on natural language descriptions using OpenAI
 - OpenAI API integration for generating color palettes from text descriptions
 - Multi-color theme generation (primary, secondary, accent, background, foreground)
