@@ -2,6 +2,13 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.2] - 2025-01-06
+
+### Fixed
+- **Critical Fix**: Include missing `streamingThemePrompt.txt` file in published extension package
+- Resolved "ENOENT: no such file or directory" error when using theme generation
+- Updated `.vscodeignore` to properly include required prompt files
+
 ## [1.0.1] - 2025-06-01
 
 ### Improved

@@ -1,6 +1,7 @@
 .vscode/**
 .vscode-test/**
 src/**
+!src/prompts/**
 node_modules/**
 .git/**
 .gitignore
