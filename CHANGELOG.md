@@ -2,6 +2,12 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.4] - 2025-06-01
+
+### Changed
+- Bumped version to 1.0.4.
+- Added explicit `activationEvents` for all commands to ensure extension activation on command invocation.
+
 ## [1.0.3] - 2025-06-01
 
 ### Fixed
