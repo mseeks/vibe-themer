@@ -2,6 +2,14 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.7] - 2025-06-01
+
+### Fixed
+- **Critical Fix**: Made activation function synchronous to ensure commands are registered immediately
+- Lowered VS Code engine requirement from ^1.100.0 to ^1.74.0 for broader compatibility
+- Moved async OpenAI initialization to happen after command registration to prevent timing issues
+- Added proper error handling for OpenAI initialization failures
+
 ## [1.0.6] - 2025-06-01
 
 ### Fixed
