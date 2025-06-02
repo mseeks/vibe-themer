@@ -81,3 +81,8 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(resetModelCommand);
 }
 
+// This method is called when your extension is deactivated
+export function deactivate() {
+    // Clean up resources if needed
+}
+

@@ -2,6 +2,14 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.3] - 2025-06-01
+
+### Fixed
+- **Critical Fix**: Resolved "command 'vibeThemer.changeTheme' not found" error in marketplace version
+- Added explicit `activationEvents` with `onStartupFinished` for reliable command registration
+- Added missing `deactivate` function export for proper extension lifecycle management
+- Improved extension activation reliability across different VS Code environments
+
 ## [1.0.2] - 2025-06-01
 
 ### Fixed
