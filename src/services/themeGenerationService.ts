@@ -137,11 +137,15 @@ export async function runThemeGenerationWorkflow(
         }, async (progress, cancellationToken) => {
             progress.report({ message: "🤖 AI is analyzing your description..." });
             
-            // Read streaming prompt
-            const streamingPrompt = fs.readFileSync(
-                path.join(context.extensionUri.fsPath, 'src', 'prompts', 'streamingThemePrompt.txt'),
-                'utf8'
-            );
+            // Read streaming prompt using proper extension resource path
+            const promptPath = context.asAbsolutePath(path.join('prompts', 'streamingThemePrompt.txt'));
+            let streamingPrompt: string;
+            
+            try {
+                streamingPrompt = fs.readFileSync(promptPath, 'utf8');
+            } catch (error) {
+                throw new Error(`Failed to load theme generation prompt from ${promptPath}. Please reinstall the extension. Error: ${error}`);
+            }
 
             // Create streaming completion for comprehensive themes
             const stream = await openai.chat.completions.create({
