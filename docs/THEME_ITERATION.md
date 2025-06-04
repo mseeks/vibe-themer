@@ -1,5 +1,9 @@
 # Theme Iteration Feature
 
+## Implementation Status
+
+**🚧 In Progress**: This feature is being implemented incrementally. See [Current Theme State Reading Implementation](CURRENT_THEME_STATE.md) for the first completed step.
+
 ## Overview
 
 Theme iteration allows users to modify existing AI-generated themes incrementally by describing changes in natural language. Instead of creating entirely new themes from scratch, users can refine their current theme with commands like "make it warmer", "darker background", or "remove the purple accents".
@@ -54,6 +58,8 @@ Result: Purple accent settings removed/reset to base theme
 - **Live Config Reading**: Extract current overrides from VS Code `workbench.colorCustomizations` and `editor.tokenColorCustomizations`
 - **Complete Context**: Send all current settings to AI for maximum specificity
 - **No State Management**: Read directly from VS Code config, eliminating sync issues
+
+> **✅ IMPLEMENTED**: See [Current Theme State Reading Implementation](CURRENT_THEME_STATE.md) for complete details and usage.
 
 ### Delta Application
 - **Existing Streaming**: Leverage current real-time streaming infrastructure
@@ -128,6 +134,17 @@ if (value === "REMOVE") {
 - Complete current theme context sent to AI for maximum specificity  
 - Existing streaming infrastructure handles delta application
 - `"REMOVE"` values clear VS Code overrides entirely
+
+### Completed Steps
+✅ **Current Theme State Reading** - [Implementation Details](CURRENT_THEME_STATE.md)
+- Added utilities to read current workbench.colorCustomizations and editor.tokenColorCustomizations
+- Smart scope detection (workspace/global/both)
+- Comprehensive error handling and test command
+
+### Next Steps
+🔲 **AI Intent Detection** - Modify prompt to detect iteration vs new theme requests
+🔲 **Context Injection** - Send current theme state to AI for better decisions  
+🔲 **Delta Application** - Handle "REMOVE" values and apply only changed settings
 
 ---
 

@@ -9,7 +9,9 @@ import {
     ThemeCustomizations, 
     ThemeApplicationResult, 
     ThemeApplicationError,
-    TokenColorRule 
+    TokenColorRule,
+    CurrentThemeState,
+    CurrentThemeResult 
 } from '../types/theme';
 
 /**
@@ -499,5 +501,112 @@ export const applyStreamingThemeSetting = async (
                 'Check the setting format and try again'
             )
         );
+    }
+};
+
+// =============================================================================
+// Current Theme State Reading
+// =============================================================================
+
+/**
+ * Reads current workbench color customizations from VS Code configuration.
+ * Checks both workspace and global scopes to capture the complete state.
+ */
+export const getCurrentColorCustomizations = (): Record<string, string> => {
+    const config = vscode.workspace.getConfiguration();
+    
+    // Get both workspace and global settings
+    const workspaceColors = config.get<Record<string, string>>('workbench.colorCustomizations', {});
+    const globalColors = config.get<Record<string, string>>('workbench.colorCustomizations', {});
+    
+    // Workspace settings take precedence over global
+    return {
+        ...globalColors,
+        ...workspaceColors
+    };
+};
+
+/**
+ * Reads current token color customizations from VS Code configuration.
+ * Combines workspace and global scopes with workspace taking precedence.
+ */
+export const getCurrentTokenColorCustomizations = (): Record<string, unknown> => {
+    const config = vscode.workspace.getConfiguration();
+    
+    // Get both workspace and global settings
+    const workspaceTokens = config.get<Record<string, unknown>>('editor.tokenColorCustomizations', {});
+    const globalTokens = config.get<Record<string, unknown>>('editor.tokenColorCustomizations', {});
+    
+    // Workspace settings take precedence over global
+    return {
+        ...globalTokens,
+        ...workspaceTokens
+    };
+};
+
+/**
+ * Determines the effective scope of current customizations.
+ * Returns where the customizations are actually stored.
+ */
+export const getCurrentCustomizationScope = (): 'workspace' | 'global' | 'both' => {
+    const config = vscode.workspace.getConfiguration();
+    
+    const workspaceColors = config.get<Record<string, string>>('workbench.colorCustomizations', {});
+    const globalColors = config.get<Record<string, string>>('workbench.colorCustomizations', {});
+    const workspaceTokens = config.get<Record<string, unknown>>('editor.tokenColorCustomizations', {});
+    const globalTokens = config.get<Record<string, unknown>>('editor.tokenColorCustomizations', {});
+    
+    const hasWorkspaceCustomizations = Object.keys(workspaceColors).length > 0 || Object.keys(workspaceTokens).length > 0;
+    const hasGlobalCustomizations = Object.keys(globalColors).length > 0 || Object.keys(globalTokens).length > 0;
+    
+    if (hasWorkspaceCustomizations && hasGlobalCustomizations) {
+        return 'both';
+    }
+    
+    if (hasWorkspaceCustomizations) {
+        return 'workspace';
+    }
+    
+    if (hasGlobalCustomizations) {
+        return 'global';
+    }
+    
+    return 'global'; // Default scope when no customizations exist
+};
+
+/**
+ * Reads the complete current theme state from VS Code configuration.
+ * This captures both color and token customizations with scope information.
+ */
+export const getCurrentThemeState = (): CurrentThemeResult => {
+    try {
+        const colorCustomizations = getCurrentColorCustomizations();
+        const tokenColorCustomizations = getCurrentTokenColorCustomizations();
+        const scope = getCurrentCustomizationScope();
+        
+        const hasCustomizations = 
+            Object.keys(colorCustomizations).length > 0 || 
+            Object.keys(tokenColorCustomizations).length > 0;
+        
+        return {
+            success: true,
+            state: {
+                colorCustomizations,
+                tokenColorCustomizations,
+                hasCustomizations,
+                scope
+            }
+        };
+        
+    } catch (error) {
+        return {
+            success: false,
+            error: createThemeApplicationError(
+                'Failed to read current theme state',
+                error,
+                true,
+                'Check VS Code configuration and try again'
+            )
+        };
     }
 };

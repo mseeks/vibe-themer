@@ -45,7 +45,7 @@ Your code embodies high standards of software craftsmanship, where every line se
 
 ## Architecture Adherence
 
-This extension follows a **pragmatic layered architecture**:
+This extension follows a **pragmatic layered architecture** detailed in [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md):
 
 ```
 Extension Layer → Service Layer → Core Layer
@@ -198,10 +198,22 @@ suggestedAction: "Try a more descriptive prompt like 'cozy autumn evening with g
 - **Clear API Key**: Secure credential management
 - **Select/Reset Model**: User control over AI model selection
 
+## Current Project Status & Documentation
+
+### 📚 **Key Documentation**
+- [README.md](../README.md) - User-facing features and installation guide
+- [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) - Technical architecture and design patterns  
+- [docs/THEME_ITERATION.md](../docs/THEME_ITERATION.md) - Theme iteration feature specification (in progress)
+- [docs/CURRENT_THEME_STATE.md](../docs/CURRENT_THEME_STATE.md) - Implementation of current theme state reading (completed)
+
+### 🚧 **Active Development**
+The extension is currently adding **theme iteration** capabilities - allowing users to modify existing themes incrementally instead of generating entirely new ones. When working on code:
+
+1. **Check existing implementations** in the theme state reading utilities (`themeCore.ts`)
+2. **Follow incremental patterns** that don't break existing functionality
+3. **Reference feature docs** before making architectural changes
+4. **Maintain backwards compatibility** with existing theme generation workflow
+
 ---
 
-## Additional Context Reference
-
-For comprehensive feature details, installation instructions, and user-facing documentation, refer to the [README.md](../README.md) file. The README contains the complete user perspective and should be consulted when working on user-facing features or documentation.
-
-Remember: Every function should read like domain language, every type should prevent bugs, and every abstraction should make the complex simple. You are building something that brings joy to developers' daily coding experience.
+**Remember:** Every function should read like domain language, every type should prevent bugs, and every abstraction should make the complex simple. You are building something that brings joy to developers' daily coding experience.

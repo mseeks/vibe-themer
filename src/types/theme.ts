@@ -57,6 +57,25 @@ export interface ThemeApplicationError {
     readonly suggestedAction?: string;
 }
 
+/**
+ * Represents the current state of VS Code theme customizations.
+ * This captures what's currently applied so we can iterate on it.
+ */
+export interface CurrentThemeState {
+    readonly colorCustomizations: Record<string, string>;
+    readonly tokenColorCustomizations: Record<string, unknown>;
+    readonly hasCustomizations: boolean;
+    readonly scope: 'workspace' | 'global' | 'both';
+}
+
+/**
+ * Result of reading current theme state.
+ * Success contains the current state, failure contains actionable error information.
+ */
+export type CurrentThemeResult = 
+    | { readonly success: true; readonly state: CurrentThemeState }
+    | { readonly success: false; readonly error: ThemeApplicationError };
+
 // =============================================================================
 // OpenAI Domain Types
 // =============================================================================

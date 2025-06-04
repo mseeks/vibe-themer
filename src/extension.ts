@@ -11,6 +11,7 @@ import { registerClearApiKeyCommand } from './commands/clearApiKeyCommand';
 import { registerResetThemeCommand } from './commands/resetThemeCommand';
 import { runThemeGenerationWorkflow } from './services/themeGenerationService';
 import { selectOpenAIModel, resetOpenAIModel } from './commands/modelSelectCommand';
+import { testCurrentThemeReading } from './utils/themeStateTest';
 
 // Reference to the OpenAI client instance
 let openai: OpenAI | undefined;
@@ -33,6 +34,10 @@ interface ThemeData {
 let lastGeneratedTheme: ThemeData | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
+    // Set development mode context for command visibility
+    const isDevelopment = context.extensionMode === vscode.ExtensionMode.Development;
+    vscode.commands.executeCommand('setContext', 'vibeThemer.development', isDevelopment);
+    
     // Register commands FIRST to ensure they're available immediately
     // Command registration should be synchronous and happen before any async operations
     
@@ -61,6 +66,14 @@ export function activate(context: vscode.ExtensionContext) {
         await resetOpenAIModel(context);
     });
     context.subscriptions.push(resetModelCommand);
+
+    // Register test command for current theme state reading (development only)
+    if (context.extensionMode === vscode.ExtensionMode.Development) {
+        let testThemeStateCommand = vscode.commands.registerCommand('vibeThemer.testThemeState', async () => {
+            await testCurrentThemeReading();
+        });
+        context.subscriptions.push(testThemeStateCommand);
+    }
 
     // Initialize OpenAI client AFTER command registration
     // This async operation happens after commands are registered

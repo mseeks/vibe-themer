@@ -2,6 +2,24 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.12] - 2025-06-04
+
+### Added
+- **Foundation for Theme Iteration**: Implemented current theme state reading utilities as the first step towards incremental theme modification
+- Added `getCurrentThemeState()` and related utilities to read existing VS Code theme customizations
+- Added development test command "Test Current Theme State (Dev)" for verifying theme state reading functionality
+- Added comprehensive TypeScript types for current theme state operations (`CurrentThemeState`, `CurrentThemeResult`)
+
+### Documentation
+- Added detailed implementation documentation in `docs/CURRENT_THEME_STATE.md`
+- Updated feature specification in `docs/THEME_ITERATION.md` with implementation progress tracking
+- Enhanced Copilot instructions to reference ongoing development work and documentation structure
+
+### Technical
+- Smart scope detection automatically identifies workspace vs global theme customizations
+- Non-breaking implementation - all new functionality is purely additive
+- Foundation established for future incremental theme modification capabilities
+
 ## [1.0.10] - 2025-06-03
 
 ### Fixed
