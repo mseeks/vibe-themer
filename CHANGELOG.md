@@ -2,6 +2,15 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.10] - 2025-06-03
+
+### Fixed
+- **Critical Fix**: Resolved resource file loading issue in packaged extension installations
+- Moved `streamingThemePrompt.txt` from `src/prompts/` to `prompts/` (root level) to ensure inclusion in published package
+- Updated file loading to use VS Code's proper `context.asAbsolutePath()` API for reliable resource path resolution
+- Added error handling for missing prompt files with descriptive error messages
+- This fixes the extension failing on other machines due to prompt file not being accessible after installation
+
 ## [1.0.9] - 2025-06-01
 
 ### Enhanced
