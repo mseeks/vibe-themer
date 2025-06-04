@@ -3,11 +3,13 @@ You are a professional VS Code theme designer and code editor color expert. Give
 IMPORTANT: Generate a FULL THEME with 80-150+ settings. Do NOT stop early - continue until all major UI elements are styled.
 
 Output each setting in this exact format:
+COUNT:estimated_total_settings
 SELECTOR:selector_name=color_value
 TOKEN:scope_name=color_value[,fontStyle]
 MESSAGE:your_engaging_progress_message
 
 Examples:
+COUNT:125
 SELECTOR:editor.background=#1a1a1a
 MESSAGE:Once upon a midnight dreary, while I coded weak and weary...
 SELECTOR:activityBar.background=#2d2d2d
@@ -16,21 +18,22 @@ MESSAGE:The sidebar whispers secrets in shadowy tones...
 TOKEN:keyword=#569cd6,bold
 
 Rules:
-1. Use valid hex codes: 6-digit (#rrggbb) for solid colors, or 8-digit (#rrggbbaa) for transparency
-2. Use lowercase letters for hex codes
-3. For TOKEN lines, fontStyle is optional (italic, bold, underline, none)
-4. Start with the most important/visible selectors first (editor.background, activityBar.background, etc.)
-5. Output one setting per line
-6. DO NOT output any JSON, comments, or explanations
-7. Each line must start with either "SELECTOR:", "TOKEN:", or "MESSAGE:"
-8. GENERATE AT LEAST 100 settings total
-9. Cover ALL major UI areas: editor, activity bar, sidebar, status bar, tabs, panels, terminal, notifications, input fields, buttons, etc.
-10. Include comprehensive token colors for all programming language elements
-11. Sprinkle in 8-12 MESSAGE lines throughout to create an engaging experience
-12. Messages should reference specific UI components being styled (editor, sidebar, status bar, etc.)
-13. Be creative with wordplay, rhymes, and humor - think Sims loading screens but themed!
-14. Make users smile while showing progress through actual UI areas being themed
-15. Each message should mention real components: "editor", "sidebar", "status bar", "activity bar", "terminal"
+1. START with a COUNT line indicating the estimated total number of settings you will generate
+2. Use valid hex codes: 6-digit (#rrggbb) for solid colors, or 8-digit (#rrggbbaa) for transparency
+3. Use lowercase letters for hex codes
+4. For TOKEN lines, fontStyle is optional (italic, bold, underline, none)
+5. Start with the most important/visible selectors first (editor.background, activityBar.background, etc.)
+6. Output one setting per line
+7. DO NOT output any JSON, comments, or explanations
+8. Each line must start with either "COUNT:", "SELECTOR:", "TOKEN:", or "MESSAGE:"
+9. GENERATE AT LEAST 100 settings total
+10. Cover ALL major UI areas: editor, activity bar, sidebar, status bar, tabs, panels, terminal, notifications, input fields, buttons, etc.
+11. Include comprehensive token colors for all programming language elements
+12. Sprinkle in 8-12 MESSAGE lines throughout to create an engaging experience
+13. Messages should reference specific UI components being styled (editor, sidebar, status bar, etc.)
+14. Be creative with wordplay, rhymes, and humor - think Sims loading screens but themed!
+15. Make users smile while showing progress through actual UI areas being themed
+16. Each message should mention real components: "editor", "sidebar", "status bar", "activity bar", "terminal"
 
 REQUIRED UI AREAS TO STYLE (generate settings for ALL of these):
 - Editor (background, foreground, selection, line highlighting, cursors)
@@ -65,6 +68,7 @@ TOKEN SCOPES TO COVER:
 - Markup elements (markup.heading, markup.bold, markup.italic)
 
 COMPLETION CRITERIA:
+- ALWAYS START with a COUNT line indicating estimated total settings (80-150)
 - Generate AT LEAST 100 settings total
 - Include at least 60+ SELECTOR settings covering all UI areas above
 - Include at least 30+ TOKEN settings covering all language elements above

@@ -293,6 +293,7 @@ const describeScopeApplication = (scope: ConfigurationScope): string => {
  * Encodes the business rule that each setting must have a type and target.
  */
 export type StreamingThemeSetting = 
+    | { readonly type: 'count'; readonly total: number }
     | { readonly type: 'selector'; readonly name: string; readonly color: string }
     | { readonly type: 'token'; readonly scope: string; readonly color: string; readonly fontStyle?: string }
     | { readonly type: 'message'; readonly content: string };
@@ -307,7 +308,7 @@ export type StreamingParseResult =
 
 /**
  * Parses a single line from streaming theme generation.
- * Handles both SELECTOR: and TOKEN: format lines.
+ * Handles COUNT:, SELECTOR:, TOKEN:, and MESSAGE: format lines.
  * 
  * Business rule: Each line must follow the exact streaming format specification.
  */
@@ -319,6 +320,27 @@ export const parseStreamingThemeLine = (line: string): StreamingParseResult => {
             success: false, 
             error: 'Empty line', 
             line 
+        };
+    }
+
+    if (trimmedLine.startsWith('COUNT:')) {
+        const content = trimmedLine.substring(6); // Remove 'COUNT:'
+        const total = parseInt(content.trim(), 10);
+        
+        if (isNaN(total) || total <= 0) {
+            return { 
+                success: false, 
+                error: 'Invalid count format - expected positive integer', 
+                line 
+            };
+        }
+
+        return {
+            success: true,
+            setting: {
+                type: 'count',
+                total
+            }
         };
     }
 
@@ -407,7 +429,7 @@ export const parseStreamingThemeLine = (line: string): StreamingParseResult => {
 
     return { 
         success: false, 
-        error: 'Line must start with SELECTOR:, TOKEN:, or MESSAGE:', 
+        error: 'Line must start with COUNT:, SELECTOR:, TOKEN:, or MESSAGE:', 
         line 
     };
 };
@@ -434,8 +456,8 @@ export const applyStreamingThemeSetting = async (
     hasWorkspaceFolders: boolean
 ): Promise<ThemeApplicationResult> => {
     try {
-        // Handle message types - they don't need VS Code config updates
-        if (setting.type === 'message') {
+        // Handle count and message types - they don't need VS Code config updates
+        if (setting.type === 'count' || setting.type === 'message') {
             const scope = determineConfigurationScope(hasWorkspaceFolders);
             return createSuccessResult(scope);
         }
@@ -510,7 +532,8 @@ export const applyStreamingThemeSetting = async (
         }
 
         // All targets failed (only selectors and tokens reach here)
-        const settingIdentifier = setting.type === 'selector' ? setting.name : setting.scope;
+        const settingIdentifier = setting.type === 'selector' ? setting.name : 
+                                 setting.type === 'token' ? setting.scope : 'unknown';
             
         return createFailureResult(
             createThemeApplicationError(

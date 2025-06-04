@@ -126,6 +126,7 @@ export async function runThemeGenerationWorkflow(
     const accumulatedSelectors: Record<string, string> = {};
     const accumulatedTokenColors: any[] = [];
     let settingsApplied = 0;
+    let expectedSettingsCount = 120; // Default fallback value
     let wasCancelled = false;
     const hasWorkspaceFolders = (vscode.workspace.workspaceFolders?.length ?? 0) > 0;
     let currentMessage = "🤖 AI analyzing your vibe...";
@@ -197,12 +198,17 @@ export async function runThemeGenerationWorkflow(
                         
                         if (applyResult.success) {
                             // Handle different setting types
-                            if (setting.type === 'selector') {
+                            if (setting.type === 'count') {
+                                expectedSettingsCount = setting.total;
+                                currentMessage = `🎯 Planning ${setting.total} theme settings...`;
+                                progress.report({ message: currentMessage });
+                                
+                            } else if (setting.type === 'selector') {
                                 settingsApplied++;
                                 accumulatedSelectors[setting.name] = setting.color;
                                 
-                                // Update progress percentage (assuming ~120 total settings)
-                                const progressPercent = Math.min(Math.floor((settingsApplied / 120) * 100), 99);
+                                // Update progress percentage using actual expected count
+                                const progressPercent = Math.min(Math.floor((settingsApplied / expectedSettingsCount) * 100), 99);
                                 progress.report({ 
                                     message: currentMessage, 
                                     increment: progressPercent - (progress as any)._lastPercent || 0
@@ -219,8 +225,8 @@ export async function runThemeGenerationWorkflow(
                                     }
                                 });
                                 
-                                // Update progress percentage (assuming ~120 total settings)
-                                const progressPercent = Math.min(Math.floor((settingsApplied / 120) * 100), 99);
+                                // Update progress percentage using actual expected count
+                                const progressPercent = Math.min(Math.floor((settingsApplied / expectedSettingsCount) * 100), 99);
                                 progress.report({ 
                                     message: currentMessage, 
                                     increment: progressPercent - (progress as any)._lastPercent || 0
@@ -280,7 +286,9 @@ export async function runThemeGenerationWorkflow(
                     const applyResult = await applyStreamingThemeSetting(parseResult.setting, hasWorkspaceFolders);
                     if (applyResult.success) {
                         const setting = parseResult.setting;
-                        if (setting.type === 'selector') {
+                        if (setting.type === 'count') {
+                            expectedSettingsCount = setting.total;
+                        } else if (setting.type === 'selector') {
                             settingsApplied++;
                             accumulatedSelectors[setting.name] = setting.color;
                         } else if (setting.type === 'token') {

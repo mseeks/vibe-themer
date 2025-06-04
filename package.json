@@ -60,6 +60,11 @@
         "command": "vibeThemer.testThemeState",
         "title": "Vibe Themer: Test Current Theme State (Dev)",
         "when": "vibeThemer.development"
+      },
+      {
+        "command": "vibeThemer.testCountParsing",
+        "title": "Vibe Themer: Test COUNT Parsing (Dev)",
+        "when": "vibeThemer.development"
       }
     ]
   },
