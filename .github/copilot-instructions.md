@@ -77,6 +77,33 @@ Extension Layer → Service Layer → Core Layer
 - Follow extension contribution point best practices
 - Implement proper error boundaries and graceful degradation
 
+### Publishing Workflow
+When publishing the extension, **always follow this exact sequence**:
+
+1. **Bump the version** in `package.json` using semantic versioning:
+   - Patch (1.0.x): Bug fixes, minor improvements
+   - Minor (1.x.0): New features, backwards compatible
+   - Major (x.0.0): Breaking changes
+2. **Create a git tag** matching the new version (e.g., `v1.0.13`)
+3. **Commit and push** both the version bump and tag
+4. **Package and publish** the extension
+
+**Never publish without bumping the version and creating a matching git tag.** This ensures proper release tracking and version history.
+
+Example workflow:
+```bash
+# Bump version (patch example)
+npm version patch
+
+# This automatically creates a git tag and commits the version change
+# Then push with tags
+git push origin main --tags
+
+# Package and publish
+vsce package
+vsce publish
+```
+
 ### Integration Patterns
 - **Command Pattern**: For all user-facing actions
 - **Functional Composition**: For business logic pipelines
