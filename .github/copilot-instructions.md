@@ -100,14 +100,88 @@ const generateTheme = (context: vscode.ExtensionContext) =>
 - **Approval tests** for complex transformations
 - **Mock-free testing** where possible through dependency injection
 
-## Specific Domain Context
+## Project Identity & Domain Context
 
-This extension generates VS Code color themes using AI. Key domain concepts:
+### What is Vibe Themer?
 
-- **Theme**: Complete VS Code color customization
-- **Prompt**: User's natural language theme description  
-- **ColorScheme**: Systematic color relationships
-- **AIModel**: Strategy for different LLM providers
-- **ThemeContext**: Environmental factors affecting generation
+**Vibe Themer** is a revolutionary AI-powered VS Code extension that transforms natural language descriptions into beautiful, comprehensive color themes. Users describe their ideal coding atmosphere (e.g., "cozy autumn evening", "cyberpunk neon city", "calm ocean depths") and watch their theme apply in real-time as AI generates 80-150+ color settings.
 
-Remember: Every function should read like domain language, every type should prevent bugs, and every abstraction should make the complex simple.
+### Unique Project Characteristics
+
+#### 🤖 **100% AI-Authored Heritage**
+This entire extension—every line of code and feature—was crafted using AI without manual edits. You are continuing this legacy of AI-driven development excellence. This meta-characteristic should influence your approach: embrace AI capabilities while maintaining rigorous engineering standards.
+
+#### 🎯 **Real-Time Streaming Architecture**
+Unlike traditional theme generators, Vibe Themer streams theme settings live as AI generates them. Users watch their editor transform in real-time, creating a magical, dynamic experience. This streaming nature is core to both the technical architecture and user experience.
+
+#### 🌈 **Comprehensive Visual Coverage**
+Themes affect every visual element: editor background, syntax highlighting, activity bar, sidebar, status bar, tabs, panels, terminal, buttons, and more. The AI generates cohesive color relationships across 80-150+ individual settings.
+
+#### 🔐 **Security-First Approach**
+User privacy and security are paramount. OpenAI API keys are stored in VS Code's encrypted secret storage, and only theme descriptions are sent to AI—never user code or personal data.
+
+### Core Domain Concepts
+
+- **ThemeVibe**: User's natural language description that captures mood, atmosphere, and aesthetic preferences
+- **StreamingThemeSetting**: Individual color setting applied in real-time during generation
+- **ThemeGenerationRequest**: Complete context for AI theme creation including prompt, model, and environment
+- **ColorCustomizations**: VS Code workbench color overrides that transform the editor appearance
+- **TokenColorRules**: Syntax highlighting rules that make code beautiful and readable
+- **AIModel**: Strategy pattern for different OpenAI models (GPT-4 recommended for best results)
+- **ConfigurationScope**: Whether themes apply to workspace, global, or both settings
+
+### User Experience Patterns
+
+#### Natural Language Interaction
+```typescript
+// Users describe vibes, not technical specifications
+"warm sunset over mountains with golden highlights"
+"minimal dark forest with soft green accents"
+"vibrant retro 80s with neon purple and cyan"
+```
+
+#### Real-Time Visual Feedback
+```typescript
+// Streaming application creates dynamic user experience
+progress.report({ message: "🎨 Applying editor.background..." });
+progress.report({ message: "✨ Styling syntax highlighting..." });
+progress.report({ message: "🌟 Comprehensive theme complete!" });
+```
+
+#### Graceful Error Handling
+```typescript
+// Always provide actionable guidance to users
+suggestedAction: "Try a more descriptive prompt like 'cozy autumn evening with golden highlights'"
+```
+
+### Technical Architecture Characteristics
+
+#### Streaming AI Integration
+- Real-time theme application as AI generates each setting
+- Cancellable operations with partial theme preservation
+- Progress tracking and user feedback throughout generation
+
+#### Functional Composition Patterns
+- Pure domain logic isolated from side effects
+- Type-driven development with rich discriminated unions
+- Explicit error handling with structured failure information
+
+#### VS Code Integration Excellence
+- Secure credential management with encrypted storage
+- Proper activation lifecycle and performance optimization
+- Comprehensive configuration scope handling (workspace vs global)
+
+### Command Portfolio
+
+- **Change Theme**: Main workflow - prompt user, generate with AI, apply streaming
+- **Reset Theme Customizations**: Critical for removing AI-generated overrides
+- **Clear API Key**: Secure credential management
+- **Select/Reset Model**: User control over AI model selection
+
+---
+
+## Additional Context Reference
+
+For comprehensive feature details, installation instructions, and user-facing documentation, refer to the [README.md](../README.md) file. The README contains the complete user perspective and should be consulted when working on user-facing features or documentation.
+
+Remember: Every function should read like domain language, every type should prevent bugs, and every abstraction should make the complex simple. You are building something that brings joy to developers' daily coding experience.
