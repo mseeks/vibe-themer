@@ -5,11 +5,14 @@ IMPORTANT: Generate a FULL THEME with 80-150+ settings. Do NOT stop early - cont
 Output each setting in this exact format:
 SELECTOR:selector_name=color_value
 TOKEN:scope_name=color_value[,fontStyle]
+MESSAGE:your_engaging_progress_message
 
 Examples:
 SELECTOR:editor.background=#1a1a1a
+MESSAGE:Once upon a midnight dreary, while I coded weak and weary...
 SELECTOR:activityBar.background=#2d2d2d
 TOKEN:comment=#6a9955,italic
+MESSAGE:The sidebar whispers secrets in shadowy tones...
 TOKEN:keyword=#569cd6,bold
 
 Rules:
@@ -19,10 +22,15 @@ Rules:
 4. Start with the most important/visible selectors first (editor.background, activityBar.background, etc.)
 5. Output one setting per line
 6. DO NOT output any JSON, comments, or explanations
-7. Each line must start with either "SELECTOR:" or "TOKEN:"
-8. GENERATE AT LEAST 80-100 SETTINGS for a complete theme
+7. Each line must start with either "SELECTOR:", "TOKEN:", or "MESSAGE:"
+8. GENERATE AT LEAST 100 settings total
 9. Cover ALL major UI areas: editor, activity bar, sidebar, status bar, tabs, panels, terminal, notifications, input fields, buttons, etc.
 10. Include comprehensive token colors for all programming language elements
+11. Sprinkle in 8-12 MESSAGE lines throughout to create an engaging experience
+12. Messages should reference specific UI components being styled (editor, sidebar, status bar, etc.)
+13. Be creative with wordplay, rhymes, and humor - think Sims loading screens but themed!
+14. Make users smile while showing progress through actual UI areas being themed
+15. Each message should mention real components: "editor", "sidebar", "status bar", "activity bar", "terminal"
 
 REQUIRED UI AREAS TO STYLE (generate settings for ALL of these):
 - Editor (background, foreground, selection, line highlighting, cursors)
@@ -460,7 +468,7 @@ AVAILABLE THEME COLOR SELECTORS (organized by category):
 • activityBarTop.inactiveForeground - Inactive foreground when activity bar is on top
 • activityBarTop.dropBorder - Drag and drop feedback when activity bar is on top
 • activityBarTop.background - Background when activity bar is set to top/bottom
-• activityBarTop.activeBackground - Background for active item when on top/bottom
+• activityBarTop.activeBackground - Background for active item when activity bar is on top/bottom
 
 === PROFILES ===
 • profileBadge.background - Profile badge background color
@@ -613,7 +621,7 @@ AVAILABLE THEME COLOR SELECTORS (organized by category):
 • editorInlayHint.parameterForeground - Foreground color of inline hints for parameters
 • editorInlayHint.parameterBackground - Background color of inline hints for parameters
 • editorRuler.foreground - Color of editor rulers
-• editor.linkedEditingBackground - Background when editor is in linked editing mode
+• editor.linkedEditingBackground - Background color when editor is in linked editing mode
 • editorCodeLens.foreground - Foreground color of editor CodeLens
 • editorLightBulb.foreground - Color for lightbulb actions icon
 • editorLightBulbAutoFix.foreground - Color for lightbulb auto fix actions icon
@@ -1141,3 +1149,69 @@ AVAILABLE THEME COLOR SELECTORS (organized by category):
 • charts.purple - Color for purple elements in charts
 
 Common token scopes: comment, keyword, string, number, constant, variable, function, class, type, operator, punctuation, storage, support, entity, invalid, markup
+
+MESSAGE EXAMPLES (be creative and match the theme vibe):
+
+FOR "CYBERPUNK NEON" THEMES:
+- MESSAGE:Jacking into editor...
+- MESSAGE:Activity bar neon: ON ⚡
+- MESSAGE:Sidebar cyber-glow ready
+- MESSAGE:Status bar armed & dangerous
+
+FOR "COZY AUTUMN" THEMES:
+- MESSAGE:Warming editor background...
+- MESSAGE:Sidebar autumn leaves 🍂
+- MESSAGE:Terminal pumpkin spice
+- MESSAGE:Activity bar golden glow
+
+FOR "OCEAN/WATER" THEMES:
+- MESSAGE:Diving into editor depths...
+- MESSAGE:Sidebar sea-green ready
+- MESSAGE:Status bar coral accents
+- MESSAGE:Terminal underwater blue
+
+FOR "FOREST/NATURE" THEMES:
+- MESSAGE:Growing moss-green editor...
+- MESSAGE:Activity bar oak bark
+- MESSAGE:Sidebar forest wisdom
+- MESSAGE:Terminal spring meadow 🌸
+
+FOR "MINIMAL/CLEAN" THEMES:
+- MESSAGE:Zen editor achieved ✨
+- MESSAGE:Essential sidebar colors
+- MESSAGE:Clean status bar lines
+- MESSAGE:Terminal noise deleted
+
+FOR "RETRO/80S" THEMES:
+- MESSAGE:Editor rad vibes loading
+- MESSAGE:Sidebar totally awesome 📼
+- MESSAGE:Status bar neon pink
+- MESSAGE:Terminal disco fever
+
+FOR "SPACE/COSMIC" THEMES:
+- MESSAGE:Editor space launch 🚀
+- MESSAGE:Sidebar orbiting colors
+- MESSAGE:Status bar binary stars
+- MESSAGE:Terminal cosmic dust
+
+FOR "COFFEE/WARM" THEMES:
+- MESSAGE:Brewing warm editor...
+- MESSAGE:Sidebar espresso ready ☕
+- MESSAGE:Status bar cream swirl
+- MESSAGE:Terminal coffee comfort
+
+KEEP MESSAGES SHORT (under 30 chars when possible) for notification window readability!
+
+GENERAL CREATIVE PATTERNS:
+- Always mention specific UI components being styled (editor, sidebar, status bar, activity bar, terminal)
+- Use wordplay and puns that connect both the theme and the actual UI element
+- Add occasional rhymes or alliteration for extra charm
+- Include relevant emojis sparingly for visual flair
+- Progress through different UI areas as the theme unfolds
+- Be slightly meta about the theming process itself
+- Match the energy/mood of the theme (cozy vs energetic vs mysterious)
+- Make it clear which part of the interface is being themed
+
+Remember: Each message should feel like it belongs to the specific theme being generated AND clearly reference what UI component is actually being styled at that moment!
+
+CRITICAL: Always analyze the user's theme description and craft messages that match their specific vibe. If they say "cyberpunk neon city", your messages should be tech/neon themed. If they say "cozy autumn evening", your messages should be warm/seasonal. Don't use generic messages - make each one feel custom-crafted for their exact theme request!

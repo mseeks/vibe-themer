@@ -128,14 +128,19 @@ export async function runThemeGenerationWorkflow(
     let settingsApplied = 0;
     let wasCancelled = false;
     const hasWorkspaceFolders = (vscode.workspace.workspaceFolders?.length ?? 0) > 0;
+    let currentMessage = "🤖 AI analyzing your vibe...";
+    let lastMessageTime = Date.now(); // Initialize with current time
+    const MIN_MESSAGE_DURATION = 800; // Show messages for at least 0.8 seconds - quick but readable
 
     try {
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
-            title: "🎨 Creating your perfect theme...",
+            title: "",
             cancellable: true
         }, async (progress, cancellationToken) => {
-            progress.report({ message: "🤖 AI is analyzing your description..." });
+            // Initialize progress tracking
+            (progress as any)._lastPercent = 0;
+            progress.report({ message: currentMessage, increment: 0 });
             
             // Read streaming prompt using proper extension resource path
             const promptPath = context.asAbsolutePath(path.join('prompts', 'streamingThemePrompt.txt'));
@@ -191,12 +196,21 @@ export async function runThemeGenerationWorkflow(
                         const applyResult = await applyStreamingThemeSetting(setting, hasWorkspaceFolders);
                         
                         if (applyResult.success) {
-                            settingsApplied++;
-                            
-                            // Accumulate for theme data structure
+                            // Handle different setting types
                             if (setting.type === 'selector') {
+                                settingsApplied++;
                                 accumulatedSelectors[setting.name] = setting.color;
+                                
+                                // Update progress percentage (assuming ~120 total settings)
+                                const progressPercent = Math.min(Math.floor((settingsApplied / 120) * 100), 99);
+                                progress.report({ 
+                                    message: currentMessage, 
+                                    increment: progressPercent - (progress as any)._lastPercent || 0
+                                });
+                                (progress as any)._lastPercent = progressPercent;
+                                
                             } else if (setting.type === 'token') {
+                                settingsApplied++;
                                 accumulatedTokenColors.push({
                                     scope: setting.scope,
                                     settings: {
@@ -204,19 +218,24 @@ export async function runThemeGenerationWorkflow(
                                         ...(setting.fontStyle && { fontStyle: setting.fontStyle })
                                     }
                                 });
-                            }
-                            
-                            // Update progress with completion tracking
-                            const settingName = setting.type === 'selector' ? setting.name : setting.scope;
-                            const progressMessage = settingsApplied < 50 
-                                ? `🎨 Applying ${settingName} (${settingsApplied}/100+ settings)`
-                                : settingsApplied < 100
-                                ? `✨ Great progress! Applied ${settingName} (${settingsApplied}/100+ settings)`
-                                : `🌟 Comprehensive theme! Applied ${settingName} (${settingsApplied} settings)`;
                                 
-                            progress.report({ 
-                                message: progressMessage
-                            });
+                                // Update progress percentage (assuming ~120 total settings)
+                                const progressPercent = Math.min(Math.floor((settingsApplied / 120) * 100), 99);
+                                progress.report({ 
+                                    message: currentMessage, 
+                                    increment: progressPercent - (progress as any)._lastPercent || 0
+                                });
+                                (progress as any)._lastPercent = progressPercent;
+                                
+                            } else if (setting.type === 'message') {
+                                // Only update message if enough time has passed or it's the first message
+                                const now = Date.now();
+                                if (now - lastMessageTime >= MIN_MESSAGE_DURATION || lastMessageTime === 0) {
+                                    currentMessage = `✨ ${setting.content}`;
+                                    lastMessageTime = now;
+                                    progress.report({ message: currentMessage });
+                                }
+                            }
                         } else {
                             errorCount++;
                             console.warn(`Failed to apply setting: ${line}`, applyResult.error);
@@ -260,11 +279,12 @@ export async function runThemeGenerationWorkflow(
                 if (parseResult.success) {
                     const applyResult = await applyStreamingThemeSetting(parseResult.setting, hasWorkspaceFolders);
                     if (applyResult.success) {
-                        settingsApplied++;
                         const setting = parseResult.setting;
                         if (setting.type === 'selector') {
+                            settingsApplied++;
                             accumulatedSelectors[setting.name] = setting.color;
                         } else if (setting.type === 'token') {
+                            settingsApplied++;
                             accumulatedTokenColors.push({
                                 scope: setting.scope,
                                 settings: {
@@ -273,16 +293,17 @@ export async function runThemeGenerationWorkflow(
                                 }
                             });
                         }
+                        // MESSAGE types don't need accumulation, they're just progress updates
                     }
                 }
             }
 
             // Update final progress message based on whether it was cancelled
             const finalMessage = wasCancelled
-                ? `🛑 Theme generation cancelled. Kept ${settingsApplied} applied settings.`
-                : `🎉 Theme complete! Applied ${settingsApplied} color settings to transform your VS Code`;
+                ? `🛑 Theme cancelled. Kept ${settingsApplied} settings.`
+                : `🎉 Theme complete! ${settingsApplied} colors applied`;
             
-            progress.report({ message: finalMessage });
+            progress.report({ message: finalMessage, increment: 100 });
         });
 
         // Build theme data structure for reference (always build it, even if cancelled)

@@ -294,7 +294,8 @@ const describeScopeApplication = (scope: ConfigurationScope): string => {
  */
 export type StreamingThemeSetting = 
     | { readonly type: 'selector'; readonly name: string; readonly color: string }
-    | { readonly type: 'token'; readonly scope: string; readonly color: string; readonly fontStyle?: string };
+    | { readonly type: 'token'; readonly scope: string; readonly color: string; readonly fontStyle?: string }
+    | { readonly type: 'message'; readonly content: string };
 
 /**
  * Result of parsing a streaming theme line.
@@ -384,9 +385,29 @@ export const parseStreamingThemeLine = (line: string): StreamingParseResult => {
         };
     }
 
+    if (trimmedLine.startsWith('MESSAGE:')) {
+        const content = trimmedLine.substring(8); // Remove 'MESSAGE:'
+        
+        if (!content.trim()) {
+            return { 
+                success: false, 
+                error: 'Empty message content', 
+                line 
+            };
+        }
+
+        return {
+            success: true,
+            setting: {
+                type: 'message',
+                content: content.trim()
+            }
+        };
+    }
+
     return { 
         success: false, 
-        error: 'Line must start with SELECTOR: or TOKEN:', 
+        error: 'Line must start with SELECTOR:, TOKEN:, or MESSAGE:', 
         line 
     };
 };
@@ -413,6 +434,12 @@ export const applyStreamingThemeSetting = async (
     hasWorkspaceFolders: boolean
 ): Promise<ThemeApplicationResult> => {
     try {
+        // Handle message types - they don't need VS Code config updates
+        if (setting.type === 'message') {
+            const scope = determineConfigurationScope(hasWorkspaceFolders);
+            return createSuccessResult(scope);
+        }
+
         const config = vscode.workspace.getConfiguration();
         const scope = determineConfigurationScope(hasWorkspaceFolders);
         const targets = getConfigurationTargets(scope);
@@ -482,10 +509,12 @@ export const applyStreamingThemeSetting = async (
             }
         }
 
-        // All targets failed
+        // All targets failed (only selectors and tokens reach here)
+        const settingIdentifier = setting.type === 'selector' ? setting.name : setting.scope;
+            
         return createFailureResult(
             createThemeApplicationError(
-                `Failed to apply ${setting.type} setting: ${setting.type === 'selector' ? setting.name : setting.scope}`,
+                `Failed to apply ${setting.type} setting: ${settingIdentifier}`,
                 new Error('All configuration targets failed'),
                 true,
                 'Check VS Code permissions and try restarting the editor'
