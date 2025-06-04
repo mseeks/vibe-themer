@@ -120,7 +120,7 @@ export async function runThemeGenerationWorkflow(
         return;
     }
 
-    const selectedModel = getSelectedOpenAIModel(context) || "gpt-4o";
+    const selectedModel = getSelectedOpenAIModel(context) || "gpt-4.1";
 
     // Streaming theme data accumulation
     const accumulatedSelectors: Record<string, string> = {};
