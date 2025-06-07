@@ -65,6 +65,11 @@
         "command": "vibeThemer.testCountParsing",
         "title": "Vibe Themer: Test COUNT Parsing (Dev)",
         "when": "vibeThemer.development"
+      },
+      {
+        "command": "vibeThemer.testContextInjection",
+        "title": "Vibe Themer: Test Context Injection (Dev)",
+        "when": "vibeThemer.development"
       }
     ]
   },

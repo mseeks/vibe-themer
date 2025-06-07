@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { ensureOpenAIClient as ensureOpenAIClientCore, getCurrentClientState } from './openaiCore';
-import { applyStreamingThemeSetting, parseStreamingThemeLine, StreamingThemeSetting } from './themeCore';
+import { applyStreamingThemeSetting, parseStreamingThemeLine, StreamingThemeSetting, getCurrentThemeState } from './themeCore';
 import { getSelectedOpenAIModel } from '../commands/modelSelectCommand';
 import { OpenAIServiceResult, OpenAIServiceError } from '../types/theme';
 import * as fs from "fs";
@@ -74,6 +74,58 @@ async function showStreamingThemeSuccessPopup(
         // Execute the reset theme command
         await vscode.commands.executeCommand('vibeThemer.resetTheme');
     }
+}
+
+/**
+ * Formats current theme state into AI-readable context for better iteration support.
+ * Returns formatted string describing existing theme customizations.
+ */
+function formatCurrentThemeContext(): string {
+    const themeStateResult = getCurrentThemeState();
+    
+    if (!themeStateResult.success) {
+        return ''; // No context on error - fallback to standard generation
+    }
+    
+    const { state } = themeStateResult;
+    
+    if (!state.hasCustomizations) {
+        return ''; // No existing customizations
+    }
+    
+    const lines: string[] = [];
+    
+    // Add color customizations context
+    const colorCount = Object.keys(state.colorCustomizations).length;
+    if (colorCount > 0) {
+        lines.push(`CURRENT THEME CONTEXT:`);
+        lines.push(`Active workbench color overrides (${colorCount} settings):`);
+        
+        Object.entries(state.colorCustomizations).forEach(([key, value]) => {
+            lines.push(`- ${key}: ${value}`);
+        });
+    }
+    
+    // Add token color customizations context  
+    const tokenCount = Object.keys(state.tokenColorCustomizations).length;
+    if (tokenCount > 0) {
+        if (lines.length > 0) {
+            lines.push(''); // Add spacing
+        }
+        lines.push(`Active syntax highlighting overrides (${tokenCount} settings):`);
+        
+        Object.entries(state.tokenColorCustomizations).forEach(([key, value]) => {
+            lines.push(`- ${key}: ${JSON.stringify(value)}`);
+        });
+    }
+    
+    if (lines.length > 0) {
+        lines.push(''); // Add spacing before user prompt
+        lines.push('User request:');
+        return lines.join('\n');
+    }
+    
+    return '';
 }
 
 /**
@@ -153,12 +205,18 @@ export async function runThemeGenerationWorkflow(
                 throw new Error(`Failed to load theme generation prompt from ${promptPath}. Please reinstall the extension. Error: ${error}`);
             }
 
+            // Inject current theme context for iteration support
+            const currentThemeContext = formatCurrentThemeContext();
+            const userPrompt = currentThemeContext 
+                ? `${currentThemeContext}\n${themeDescription}`
+                : `Theme description: ${themeDescription}`;
+
             // Create streaming completion for comprehensive themes
             const stream = await openai.chat.completions.create({
                 model: selectedModel,
                 messages: [
                     { role: "system", content: streamingPrompt },
-                    { role: "user", content: `Theme description: ${themeDescription}` }
+                    { role: "user", content: userPrompt }
                 ],
                 stream: true
             });

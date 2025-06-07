@@ -13,6 +13,7 @@ import { runThemeGenerationWorkflow } from './services/themeGenerationService';
 import { selectOpenAIModel, resetOpenAIModel } from './commands/modelSelectCommand';
 import { testCurrentThemeReading } from './utils/themeStateTest';
 import { testCountParsing } from './utils/countParsingTest';
+import { testContextInjection } from './utils/contextInjectionTest';
 
 // Reference to the OpenAI client instance
 let openai: OpenAI | undefined;
@@ -79,6 +80,11 @@ export function activate(context: vscode.ExtensionContext) {
             await testCountParsing();
         });
         context.subscriptions.push(testCountParsingCommand);
+
+        let testContextInjectionCommand = vscode.commands.registerCommand('vibeThemer.testContextInjection', async () => {
+            await testContextInjection();
+        });
+        context.subscriptions.push(testContextInjectionCommand);
     }
 
     // Initialize OpenAI client AFTER command registration

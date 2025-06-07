@@ -2,6 +2,24 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.14] - 2025-06-07
+
+### Added
+- **Context Injection for Theme Iteration**: AI now receives complete current theme state for better iteration support
+- **Enhanced Theme Generation**: When modifying existing themes, AI gets context about all current color and token customizations
+- **Development Test Command**: Added `testContextInjection` command to verify context injection functionality
+
+### Enhanced  
+- **Smarter AI Decisions**: AI can now make informed decisions about theme modifications by seeing existing customizations
+- **Foundation for Iteration**: Prepares groundwork for incremental theme modification workflow
+- **Graceful Fallback**: Context injection activates only when customizations exist, ensuring backwards compatibility
+
+### Technical
+- Added `formatCurrentThemeContext()` function to format theme state for AI consumption
+- Enhanced theme generation service to inject current theme context into AI prompts
+- Implemented safe context reading with comprehensive error handling
+- Added comprehensive test utilities for development and validation
+
 ## [1.0.13] - 2025-06-07
 
 ### Added
