@@ -23,7 +23,7 @@
 ## ✨ Features
 
 - **🤖 AI-powered theme generation**: Describe your vibe (e.g., "cozy autumn evening", "cyberpunk neon", "calm ocean depths") and instantly get a matching color palette
-- **🎯 Real-time streaming**: Watch your theme apply live as AI generates each color setting 
+- **🎯 Real-time streaming with progress tracking**: Watch your theme apply live as AI generates each color setting with accurate progress estimates and refined status messages
 - **🌈 Comprehensive coverage**: Updates 80-150+ settings across all major UI elements—editor, activity bar, sidebar, status bar, tabs, panels, terminal, and more
 - **💻 Smart syntax highlighting**: AI generates matching token colors for beautiful code syntax highlighting
 - **🔐 Secure API storage**: Your OpenAI API key is stored securely in VS Code's encrypted storage
