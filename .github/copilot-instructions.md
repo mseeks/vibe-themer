@@ -80,18 +80,23 @@ Extension Layer → Service Layer → Core Layer
 ### Publishing Workflow
 When publishing the extension, **always follow this exact sequence**:
 
-1. **Bump the version** in `package.json` using semantic versioning:
+1. **Update the changelog** comparing the old tag to the current changes
+2. **Update the README** to reflect any new features or changes 
+3. **Bump the version** in `package.json` using semantic versioning:
    - Patch (1.0.x): Bug fixes, minor improvements
    - Minor (1.x.0): New features, backwards compatible
    - Major (x.0.0): Breaking changes
-2. **Create a git tag** matching the new version (e.g., `v1.0.13`)
-3. **Commit and push** both the version bump and tag
-4. **Package and publish** the extension
+4. **Create a git tag** matching the new version (e.g., `v1.0.13`)
+5. **Commit and push** both the version bump and tag
+6. **Package and publish** the extension
+7. **Clean up old VSIX files** to keep the repository tidy
 
 **Never publish without bumping the version and creating a matching git tag.** This ensures proper release tracking and version history.
 
 Example workflow:
 ```bash
+# Update changelog and README first
+
 # Bump version (patch example)
 npm version patch
 
@@ -102,6 +107,9 @@ git push origin main --tags
 # Package and publish
 vsce package
 vsce publish
+
+# Clean up old VSIX files (keep only current version)
+rm vibe-themer-*.vsix; ls vibe-themer-*.vsix | head -n -1 | xargs rm
 ```
 
 ### Integration Patterns
