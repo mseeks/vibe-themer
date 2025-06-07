@@ -2,6 +2,28 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.13] - 2025-06-07
+
+### Added
+- **Content Disclaimer**: Added clear disclaimer about AI-generated text content not being moderated by the extension
+- **Enhanced Progress Accuracy**: AI now estimates and reports the expected number of theme settings for more accurate progress tracking
+- **Test Utility**: Added development command for testing settings count parsing accuracy
+
+### Enhanced
+- **Improved UX**: Refined progress messages to reduce visual clutter and provide clearer feedback during theme generation
+- **Streaming Prompt Optimization**: Enhanced AI prompt with painter's workflow methodology for more complete and cohesive theme generation
+- **Documentation**: Added comprehensive publishing workflow instructions for proper version management and release process
+
+### Documentation
+- Added content disclaimer in Privacy & Security section to clarify user responsibility for AI-generated content
+- Enhanced Copilot instructions with detailed publishing workflow requirements
+- Improved prompt engineering documentation for better theme generation consistency
+
+### Technical
+- Enhanced progress reporting with AI-estimated settings count for better user feedback
+- Optimized streaming theme generation workflow for improved completeness
+- Added utilities for parsing and validating AI-generated settings count estimates
+
 ## [1.0.12] - 2025-06-04
 
 ### Added
