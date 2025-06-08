@@ -103,23 +103,17 @@ Create an AI-powered prompt suggestion system that:
 
 ### Technical Implementation
 ```typescript
-type AISuggestionRequest = {
-  readonly context?: string; // AI-determined context (e.g., "new theme", "iteration", "morning focus", etc.)
-  readonly timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night';
-  readonly currentSeason?: string;
-};
-
 type ThemePromptSuggestion = {
   readonly label: string;
   readonly description?: string;
   readonly source: 'ai_generated' | 'curated_fallback';
 };
 
-const generateAISuggestions = async (request: AISuggestionRequest): Promise<ThemePromptSuggestion[]> => {
+const generateAISuggestions = async (openai: OpenAI): Promise<ThemePromptSuggestion[]> => {
   // Call OpenAI with specialized prompt for generating creative theme suggestions
 };
 
-const createThemePromptPicker = async (): Promise<string | undefined> => {
+const createThemePromptPicker = async (context: vscode.ExtensionContext): Promise<string | undefined> => {
   // Show loading, generate AI suggestions, fallback to curated, allow typing
 };
 ```
@@ -194,12 +188,6 @@ If AI suggestion generation fails:
 
 ### Type Definitions
 ```typescript
-type AISuggestionRequest = {
-  readonly context?: string; // AI-determined context (e.g., "new theme", "iteration", "morning focus", etc.)
-  readonly timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night';
-  readonly currentSeason?: string;
-};
-
 type ThemePromptSuggestion = {
   readonly label: string;
   readonly description?: string;
@@ -208,9 +196,9 @@ type ThemePromptSuggestion = {
 ```
 
 ### Data Management
-- AI-generated suggestions with 5-minute cache (balance freshness vs performance)
+- AI-generated suggestions with no caching (fresh calls each time for simplicity)
 - Curated fallback examples stored as readonly arrays in core layer
-- Context detection utilities for time/theme awareness
+- No context detection initially (simplified approach)
 
 ## Success Criteria
 

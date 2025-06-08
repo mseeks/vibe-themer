@@ -240,15 +240,38 @@ suggestedAction: "Try a more descriptive prompt like 'cozy autumn evening with g
 - [README.md](../README.md) - User-facing features and installation guide
 - [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) - Technical architecture and design patterns
 - [docs/adrs/001-theme-iteration-feature.md](../docs/adrs/001-theme-iteration-feature.md) - Complete ADR for theme iteration feature (v1.0.15)
+- [docs/adrs/002-theme-prompt-enhancement.md](../docs/adrs/002-theme-prompt-enhancement.md) - ADR for AI-powered prompt suggestions
+- [docs/adrs/002-theme-prompt-enhancement-implementation.md](../docs/adrs/002-theme-prompt-enhancement-implementation.md) - Implementation plan and progress tracking
 
 ### ✅ **Completed Features**
 The extension has **complete theme iteration functionality** shipped in v1.0.15. Users can modify existing themes incrementally using natural language (e.g., "make it warmer", "darker background", "remove the purple accents").
 
 **Key Implementation**: Context-aware AI intent detection with delta application through existing streaming infrastructure. Full technical details in [ADR-001](../docs/adrs/001-theme-iteration-feature.md).
 
+### 📋 **Next Up: Enhanced Theme Prompt Input (ADR-002)**
+**Status**: ADR approved, implementation not yet started
+
+**Planned Feature**: AI-powered theme prompt suggestions to replace the basic `showInputBox` with an intelligent QuickPick interface:
+
+**Proposed Features**:
+- AI-generated creative suggestions using OpenAI API (4-6 suggestions per session)
+- Fallback to curated examples when AI unavailable
+- Free-form typing alongside suggestions
+- Real-time loading states with personality
+- Type-safe implementation following project architecture
+
+**Current State**: ADR approved and documented, ready for implementation
+
+**Key Files**:
+- `docs/adrs/002-theme-prompt-enhancement.md` - Complete ADR with decision rationale
+- `docs/adrs/002-theme-prompt-enhancement-implementation.md` - Implementation plan ready for execution
+
+**Next Steps**: Begin Phase 1 implementation - create type definitions and curated fallback examples
+
 ### 🏗️ **ADR Structure**
 Architecture Decision Records are stored in `docs/adrs/` following the pattern:
-- `001-theme-iteration-feature.md` - Theme iteration feature design and implementation
+- `001-theme-iteration-feature.md` - Theme iteration feature design and implementation (✅ Complete)
+- `002-theme-prompt-enhancement.md` - Enhanced prompt input with AI suggestions (📋 Approved, not started)
 - Future ADRs will follow `XXX-feature-name.md` naming convention
 
 When working on significant features or architectural decisions:
