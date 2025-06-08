@@ -44,13 +44,52 @@
    - Open Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`)
    - Run **"Vibe Themer: Change Theme"**
    - Enter your OpenAI API key when prompted (stored securely, only needed once)
-   - Describe your ideal theme: `"warm sunset over mountains"`, `"minimal dark forest"`, or `"vibrant retro 80s"`
+   - Describe your ideal theme: `"warm sunset over mountains"`, `"minimal dark forest"`, `"vibrant retro 80s"`, `"the feeling of finding a $20 bill in old jeans"`, or `"existential dread but make it cozy"`
 3. **Watch the magic**: Your theme applies in real-time as AI generates each color setting
-4. **Iterate your theme**: Run the command again to modify your current theme - try `"make it warmer"`, `"darker background"`, or `"remove the blue accents"`
+4. **Iterate your theme**: Run the command again to modify your current theme - try `"make it warmer"`, `"darker background"`, `"remove the blue accents"`, `"needs more cat energy"`, or `"what if this theme went to therapy"`
 5. **Want to change back?**: Always use **"Vibe Themer: Reset Theme Customizations"** to return to your original theme
 
+### 🔄 Theme Iteration Examples
+
+Once you have a base theme, you can refine it incrementally with natural language:
+
+**Temperature adjustments:**
+- `"make it warmer"` → Adds orange/red tones to existing colors
+- `"cooler tones"` → Shifts palette toward blue/green spectrum
+- `"add some spice"` → Introduces warm, energetic accent colors
+
+**Brightness modifications:**
+- `"darker background"` → Reduces background brightness while preserving contrast
+- `"brighter highlights"` → Enhances accent colors and selection highlights
+- `"give it that 3am coding vibe"` → Creates a deep, focused atmosphere
+
+**Color modifications:**
+- `"add some blue accents"` → Introduces blue highlights in appropriate places
+- `"remove the purple accents"` → Eliminates purple tones, falling back to base theme
+- `"more contrast"` → Increases difference between foreground and background
+- `"needs more mystery"` → Adds deeper, enigmatic color choices
+
+**Abstract and creative requests:**
+- `"make it feel like a warm hug"` → Softens colors with comfortable, embracing tones
+- `"what if this theme was caffeinated"` → Brightens and energizes the color palette
+- `"this theme but in minor key"` → Shifts to more melancholic, subdued tones
+- `"add the essence of productivity"` → Introduces clean, focused color relationships
+- `"make it taste like lavender"` → Applies soft purple and calming neutral tones
+- `"this theme went to art school"` → Adds sophisticated, curated color harmony
+
+**Mood-based iterations:**
+- `"more nostalgic"` → Applies vintage, sepia-influenced color grading
+- `"less anxious"` → Reduces harsh contrasts and jarring color combinations
+- `"give it main character energy"` → Bold, confident accent colors and striking contrasts
+- `"what would this look like underwater"` → Blue-green tonal shifts with fluid color transitions
+
+**Style adjustments:**
+- `"softer edges"` → Reduces harsh contrasts for a gentler appearance
+- `"more vibrant"` → Increases color saturation across the theme
+- `"make it whisper instead of shout"` → Subtle, understated color refinements
+
 > **💡 Pro tip**: Be descriptive! Instead of "dark theme", try "mysterious midnight with purple accents" for better results.
-> **✨ Iteration tip**: Once you have a theme you like, you can refine it incrementally rather than starting from scratch!
+> **✨ Iteration tip**: The AI intelligently detects whether you want a new theme or to modify your current one - just describe what you want!
 
 ## 📋 Commands
 
@@ -121,6 +160,29 @@ This project started as a challenge: **How far can pure AI-driven "vibe coding" 
 - 📚 **Comprehensive features**: From streaming API integration to secure credential management
 
 *Vibe Themer proves that AI can create sophisticated, production-ready software when provided with clear requirements and iterative feedback.*
+
+---
+
+## 🛠️ Development Commands (For Extension Developers)
+
+> **⚠️ DEVELOPER ONLY**: These commands are intended for extension development and debugging. Regular users should not need these commands.
+
+The following commands are available for testing and development purposes:
+
+| Command                                         | Description                                                | Purpose                                        |
+| ----------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------- |
+| **Vibe Themer: Test Current Theme State (Dev)** | 📊 Display current theme customizations and scope detection | Test current theme state reading functionality |
+| **Vibe Themer: Test Context Injection (Dev)**   | 🧪 Test AI context injection with current theme data        | Verify context formatting for AI prompts       |
+| **Vibe Themer: Test Remove Value (Dev)**        | 🗑️ Test REMOVE value handling for clearing customizations   | Debug color removal functionality              |
+| **Vibe Themer: Test Count Parsing (Dev)**       | 🔢 Test streaming progress count parsing from AI responses  | Debug progress tracking accuracy               |
+
+These commands help verify:
+- **Theme State Reading**: Ensure current customizations are properly detected
+- **Context Injection**: Verify AI receives complete theme context for iteration
+- **Remove Functionality**: Test that color removal properly clears VS Code overrides
+- **Progress Tracking**: Validate streaming progress count parsing
+
+**Usage**: Only use these commands if you're contributing to Vibe Themer development or debugging issues. Results appear in VS Code's Output panel under "Vibe Themer".
 
 ---
 
