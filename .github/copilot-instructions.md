@@ -89,7 +89,7 @@ When publishing the extension, **always follow this exact sequence**:
 4. **Create a git tag** matching the new version (e.g., `v1.0.13`)
 5. **Commit and push** both the version bump and tag
 6. **Package and publish** the extension
-7. **Clean up old VSIX files** to keep the repository tidy
+7. **Clean up ALL VSIX files** to keep the repository completely clean
 
 **Never publish without bumping the version and creating a matching git tag.** This ensures proper release tracking and version history.
 
@@ -108,8 +108,8 @@ git push origin main --tags
 vsce package
 vsce publish
 
-# Clean up old VSIX files (keep only current version)
-rm vibe-themer-*.vsix; ls vibe-themer-*.vsix | head -n -1 | xargs rm
+# Clean up ALL VSIX files (don't keep any build artifacts)
+rm vibe-themer-*.vsix
 ```
 
 ### Integration Patterns
