@@ -2,6 +2,25 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.16] - 2025-06-07
+
+### Added
+- **🏗️ Theme Prompt Enhancement Foundation (Phase 1)**: Core infrastructure for upcoming AI-powered theme suggestions
+- **Theme Suggestion Types**: New `ThemePromptSuggestion` interface and validation functions for type-safe suggestion handling
+- **Curated Examples Repository**: 12 creative theme prompts from README examples available as fallback suggestions
+- **Functional Utilities**: Pure functions for suggestion validation, random selection, and graceful degradation
+
+### Technical
+- Added `suggestionCore.ts` with curated theme suggestions showcasing Vibe Themer's creative personality
+- Implemented type-safe validation functions (`isValidSuggestion`, `validateSuggestions`)
+- Added utility functions for deterministic testing and fallback scenarios
+- Foundation ready for Phase 2: QuickPick integration to replace basic input box
+- Follows functional programming patterns with readonly arrays and pure functions
+
+### Documentation
+- Updated ADR-002 implementation plan with Phase 1 completion status
+- Marked core foundation as complete and ready for next integration phase
+
 ## [1.0.15] - 2025-06-07
 
 ### Added
