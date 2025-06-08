@@ -237,17 +237,24 @@ suggestedAction: "Try a more descriptive prompt like 'cozy autumn evening with g
 
 ### 📚 **Key Documentation**
 - [README.md](../README.md) - User-facing features and installation guide
-- [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) - Technical architecture and design patterns  
-- [docs/THEME_ITERATION.md](../docs/THEME_ITERATION.md) - Theme iteration feature specification (in progress)
-- [docs/CURRENT_THEME_STATE.md](../docs/CURRENT_THEME_STATE.md) - Implementation of current theme state reading (completed)
+- [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) - Technical architecture and design patterns
+- [docs/adrs/001-theme-iteration-feature.md](../docs/adrs/001-theme-iteration-feature.md) - Complete ADR for theme iteration feature (v1.0.15)
 
-### 🚧 **Current Capabilities**
-The extension now has **complete theme iteration functionality** - users can modify existing themes incrementally using natural language (e.g., "make it warmer", "darker background", "remove the purple accents"). When working on code:
+### ✅ **Completed Features**
+The extension has **complete theme iteration functionality** shipped in v1.0.15. Users can modify existing themes incrementally using natural language (e.g., "make it warmer", "darker background", "remove the purple accents").
 
-1. **Leverage existing patterns** from the theme state reading utilities (`themeCore.ts`)
-2. **Follow incremental approaches** that build on the solid foundation
-3. **Reference comprehensive docs** in the docs/ folder for context
-4. **Maintain backwards compatibility** - all changes are non-breaking enhancements
+**Key Implementation**: Context-aware AI intent detection with delta application through existing streaming infrastructure. Full technical details in [ADR-001](../docs/adrs/001-theme-iteration-feature.md).
+
+### 🏗️ **ADR Structure**
+Architecture Decision Records are stored in `docs/adrs/` following the pattern:
+- `001-theme-iteration-feature.md` - Theme iteration feature design and implementation
+- Future ADRs will follow `XXX-feature-name.md` naming convention
+
+When working on significant features or architectural decisions:
+1. **Reference existing ADRs** for established patterns and context
+2. **Create new ADRs** for major features or architectural changes
+3. **Update ADRs** when decisions evolve or are superseded
+4. **Link ADRs** from main architecture documentation
 
 ---
 
