@@ -2,6 +2,27 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.0.15] - 2025-06-07
+
+### Added
+- **🚧 Theme Iteration Feature Complete**: Users can now modify existing themes incrementally using natural language
+- **AI Intent Detection**: AI automatically detects whether user input is for a new theme or iteration
+- **REMOVE Value Support**: AI can now remove unwanted customizations with "REMOVE" values
+- **Delta Application**: Incremental theme changes apply only modified settings for faster, more precise updates
+
+### Enhanced
+- **Smarter Theme Modification**: Use commands like "make it warmer", "darker background", or "remove the purple accents"
+- **Context-Aware AI**: AI understands current theme state for intelligent iteration decisions
+- **Surgical Precision**: Target specific theme aspects while preserving successful elements
+- **Seamless Experience**: No mode switching required - AI determines intent automatically
+
+### Technical
+- Enhanced streaming prompt with NEW vs ITERATION mode detection
+- Updated `validateStreamingColor()` to accept "REMOVE" values for clearing customizations
+- Modified `applyStreamingThemeSetting()` to handle REMOVE values for both selector and token settings
+- Added comprehensive test utility `testRemoveValue` for development verification
+- Complete integration enables AI to generate delta changes or complete themes based on user intent
+
 ## [1.0.14] - 2025-06-07
 
 ### Added

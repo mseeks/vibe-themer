@@ -56,8 +56,8 @@ Expected behavior:
 
 This foundation enabled the following incremental steps which have been completed:
 1. ✅ **Context Injection** (v1.0.14) - Send current theme state to AI for better decisions
-2. 🔲 **AI Intent Detection** - Detect iteration vs new theme requests  
-3. 🔲 **Delta Application** - Apply only changed settings with "REMOVE" support
+2. ✅ **AI Intent Detection** (v1.0.15) - Detect iteration vs new theme requests with REMOVE support
+3. 🔲 **End-to-End Testing** - Verify complete theme iteration workflow
 
 ### Context Injection Implementation (v1.0.14)
 The context injection step has been completed and shipped in version 1.0.14:
@@ -68,6 +68,17 @@ The context injection step has been completed and shipped in version 1.0.14:
 - **Development Test Command**: `testContextInjection` command for verifying functionality
 
 This enables the AI to make informed decisions about theme modifications by seeing all existing customizations.
+
+### AI Intent Detection Implementation (v1.0.15)
+The AI Intent Detection step has been completed and shipped in version 1.0.15:
+
+- **Enhanced Streaming Prompt**: AI can now detect NEW vs ITERATION modes based on context
+- **REMOVE Value Support**: `validateStreamingColor()` accepts "REMOVE" to clear existing customizations  
+- **Delta Application**: `applyStreamingThemeSetting()` handles REMOVE values for both selector and token settings
+- **Test Utilities**: `testRemoveValue` command for verification
+- **Complete Integration**: AI generates either delta changes or complete themes based on user intent
+
+The AI can now intelligently modify existing themes incrementally or create new ones from scratch.
 
 ## Non-Breaking Nature
 

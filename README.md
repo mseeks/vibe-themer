@@ -23,8 +23,9 @@
 ## ✨ Features
 
 - **🤖 AI-powered theme generation**: Describe your vibe (e.g., "cozy autumn evening", "cyberpunk neon", "calm ocean depths") and instantly get a matching color palette
+- **🔄 Theme iteration**: Modify existing themes incrementally with natural language (e.g., "make it warmer", "darker background", "remove the purple accents") instead of starting over
 - **🎯 Real-time streaming with progress tracking**: Watch your theme apply live as AI generates each color setting with accurate progress estimates and refined status messages
-- **🌈 Comprehensive coverage**: Updates 80-150+ settings across all major UI elements—editor, activity bar, sidebar, status bar, tabs, panels, terminal, and more
+- **🌈 Comprehensive coverage**: Updates a complete theme across all major UI elements—editor, activity bar, sidebar, status bar, tabs, panels, terminal, and more
 - **💻 Smart syntax highlighting**: AI generates matching token colors for beautiful code syntax highlighting
 - **🔐 Secure API storage**: Your OpenAI API key is stored securely in VS Code's encrypted storage
 - **⚙️ Flexible model selection**: Choose which OpenAI model to use for theme generation
@@ -45,9 +46,11 @@
    - Enter your OpenAI API key when prompted (stored securely, only needed once)
    - Describe your ideal theme: `"warm sunset over mountains"`, `"minimal dark forest"`, or `"vibrant retro 80s"`
 3. **Watch the magic**: Your theme applies in real-time as AI generates each color setting
-4. **Want to change back?**: Always use **"Vibe Themer: Reset Theme Customizations"** to return to your original theme
+4. **Iterate your theme**: Run the command again to modify your current theme - try `"make it warmer"`, `"darker background"`, or `"remove the blue accents"`
+5. **Want to change back?**: Always use **"Vibe Themer: Reset Theme Customizations"** to return to your original theme
 
 > **💡 Pro tip**: Be descriptive! Instead of "dark theme", try "mysterious midnight with purple accents" for better results.
+> **✨ Iteration tip**: Once you have a theme you like, you can refine it incrementally rather than starting from scratch!
 
 ## 📋 Commands
 
@@ -77,7 +80,7 @@ To switch back to your original theme or try a different base theme:
 
 1. **You describe your vibe**: Use natural language to describe your ideal theme
 2. **AI processes your request**: Your description is sent to OpenAI for intelligent color palette generation
-3. **Real-time theme application**: Watch as 80-150+ individual color settings apply to your editor in real-time
+3. **Real-time theme application**: Watch as a complete theme applies to your editor in real-time
 4. **Comprehensive styling**: Every UI element gets styled—from editor background to syntax highlighting to button colors
 5. **Persistent customization**: Your theme stays applied until you reset it using the provided command
 
@@ -100,7 +103,7 @@ To switch back to your original theme or try a different base theme:
 
 - **Internet Required**: Active connection needed for OpenAI API access
 - **Theme Quality**: More descriptive prompts yield better themes (try "warm autumn forest with golden highlights" vs just "autumn")
-- **Performance**: Large themes (150+ settings) may take 30-60 seconds to generate completely
+- **Performance**: Large themes may take 30-60 seconds to generate completely
 - **Workspace vs Global**: When no workspace is open, themes apply to global user settings
 - **Model Differences**: GPT-4 typically produces more sophisticated color schemes than GPT-3.5
 

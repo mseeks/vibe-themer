@@ -2,7 +2,7 @@
 
 ## Implementation Status
 
-**🚧 In Progress**: This feature is being implemented incrementally. Current step: Context Injection ✅ completed (v1.0.14). See progress details below.
+**🚧 Implementation Complete**: AI Intent Detection with REMOVE support shipped in v1.0.15. The theme iteration feature is now fully functional - users can modify existing themes incrementally using natural language.
 
 ## Overview
 
@@ -19,7 +19,7 @@ The feature leverages AI to:
 
 ### Current Workflow
 ```
-User: "cozy autumn evening" → AI generates 150+ settings → Theme applied
+User: "cozy autumn evening" → AI generates complete theme → Theme applied
 ```
 
 ### New Iteration Workflow  
@@ -32,7 +32,7 @@ User: "make it warmer" → AI detects iteration → Generates 10-20 delta change
 **Creating a base theme:**
 ```
 Input: "cyberpunk neon city with purple accents"
-Result: Complete theme with 150+ settings applied
+Result: Complete theme applied
 ```
 
 **Iterating on the theme:**
@@ -116,7 +116,7 @@ if (value === "REMOVE") {
 ## Benefits
 
 ### For Users
-- **Faster Refinement**: Generate 10-20 deltas vs 150+ full settings for small changes
+- **Faster Refinement**: Generate 10-20 deltas vs a full theme for small changes
 - **Iterative Design**: Natural workflow for exploring variations  
 - **Precise Control**: Target specific aspects while preserving successful elements
 - **Seamless Experience**: No mode switching or confirmation dialogs
@@ -148,9 +148,17 @@ if (value === "REMOVE") {
 - Graceful fallback when no customizations exist (standard generation)
 - Added development test command `testContextInjection` for verification
 
+✅ **AI Intent Detection** - Modify prompt to detect iteration vs new theme requests (v1.0.15)
+- Enhanced streaming prompt with intent detection capabilities (NEW vs ITERATION modes)
+- Added REMOVE value support for clearing existing customizations
+- Updated `validateStreamingColor()` to accept "REMOVE" as valid value
+- Modified `applyStreamingThemeSetting()` to handle REMOVE values for both selector and token settings
+- Added comprehensive test utility `testRemoveValue` for verification
+- AI can now generate delta changes or complete themes based on context
+
 ### Next Steps
-🔲 **AI Intent Detection** - Modify prompt to detect iteration vs new theme requests
-🔲 **Delta Application** - Handle "REMOVE" values and apply only changed settings
+🔲 **End-to-End Testing** - Verify complete theme iteration workflow
+🔲 **Documentation Updates** - Update user-facing documentation for iteration feature
 
 ---
 

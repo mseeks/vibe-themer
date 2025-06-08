@@ -1,8 +1,8 @@
 {
   "name": "vibe-themer",
   "displayName": "Vibe Themer",
-  "description": "🎨 AI-powered VS Code theme generator. Describe your vibe, watch real-time streaming as OpenAI creates comprehensive custom themes with 80-150+ color settings. 🤖 100% vibe-coded using VS Code's agentic AI!",
-  "version": "1.0.14",
+  "description": "🎨 AI-powered VS Code theme generator. Describe your vibe, watch real-time streaming as OpenAI creates comprehensive custom themes with a complete theme. 🤖 100% vibe-coded using VS Code's agentic AI!",
+  "version": "1.0.15",
   "publisher": "mseeks",
   "icon": "icon.png",
   "repository": {
@@ -69,6 +69,11 @@
       {
         "command": "vibeThemer.testContextInjection",
         "title": "Vibe Themer: Test Context Injection (Dev)",
+        "when": "vibeThemer.development"
+      },
+      {
+        "command": "vibeThemer.testRemoveValue",
+        "title": "Vibe Themer: Test REMOVE Value Handling (Dev)",
         "when": "vibeThemer.development"
       }
     ]

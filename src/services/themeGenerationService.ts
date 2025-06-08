@@ -154,8 +154,8 @@ export async function runThemeGenerationWorkflow(
     const openai = openaiResult.data;
 
     const themeDescription = await vscode.window.showInputBox({
-        prompt: '🎨 Describe your ideal coding atmosphere (e.g., "warm sunset over mountains", "cyberpunk neon city", "calm forest morning")',
-        placeHolder: 'Be descriptive for best results: "cozy autumn evening with golden highlights"',
+        prompt: '🎨 Describe your ideal coding atmosphere or modify your current theme (e.g., "warm sunset over mountains", "make it warmer", "darker background")',
+        placeHolder: 'New theme: "cozy autumn evening" | Modify existing: "remove purple accents"',
         value: '',
         validateInput: (value) => {
             if (!value.trim()) {
@@ -168,7 +168,7 @@ export async function runThemeGenerationWorkflow(
         }
     });
     if (!themeDescription) {
-        vscode.window.showInformationMessage('No theme description provided. Try again when you\'re ready to create your perfect coding atmosphere! 🎨', { modal: true });
+        vscode.window.showInformationMessage('No theme description provided. Try again when you\'re ready to create or modify your perfect coding atmosphere! 🎨', { modal: true });
         return;
     }
 

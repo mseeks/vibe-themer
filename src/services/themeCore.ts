@@ -437,8 +437,14 @@ export const parseStreamingThemeLine = (line: string): StreamingParseResult => {
 /**
  * Validates that a color string meets basic format requirements.
  * Reuses hex validation logic for streaming theme colors.
+ * Also accepts REMOVE for theme iteration support.
  */
 const validateStreamingColor = (color: string): boolean => {
+    // Accept REMOVE for theme iteration
+    if (color.trim().toUpperCase() === 'REMOVE') {
+        return true;
+    }
+    
     // Hex color validation (3, 6, or 8 digit hex codes)
     const hexPattern = /^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$|^#[0-9a-fA-F]{8}$/;
     const isValidHex = hexPattern.test(color);
@@ -471,10 +477,20 @@ export const applyStreamingThemeSetting = async (
             for (const target of targets) {
                 try {
                     const existingColors = config.get('workbench.colorCustomizations') as Record<string, string> || {};
-                    const updatedColors = {
-                        ...existingColors,
-                        [setting.name]: setting.color
-                    };
+                    
+                    let updatedColors: Record<string, string>;
+                    
+                    if (setting.color.trim().toUpperCase() === 'REMOVE') {
+                        // Remove the setting by creating a new object without it
+                        updatedColors = { ...existingColors };
+                        delete updatedColors[setting.name];
+                    } else {
+                        // Add or update the setting
+                        updatedColors = {
+                            ...existingColors,
+                            [setting.name]: setting.color
+                        };
+                    }
                     
                     await config.update('workbench.colorCustomizations', updatedColors, target);
                     
@@ -498,17 +514,25 @@ export const applyStreamingThemeSetting = async (
                     const existingTokens = config.get('editor.tokenColorCustomizations') as Record<string, unknown> || {};
                     const existingRules = (existingTokens.textMateRules as any[]) || [];
                     
-                    // Create new token rule
-                    const newRule = {
-                        scope: setting.scope,
-                        settings: {
-                            foreground: setting.color,
-                            ...(setting.fontStyle && { fontStyle: setting.fontStyle })
-                        }
-                    };
+                    let updatedRules: any[];
                     
-                    // Update existing rules or add new one
-                    const updatedRules = [...existingRules.filter(rule => rule.scope !== setting.scope), newRule];
+                    if (setting.color.trim().toUpperCase() === 'REMOVE') {
+                        // Remove the token rule by filtering it out
+                        updatedRules = existingRules.filter(rule => rule.scope !== setting.scope);
+                    } else {
+                        // Create new token rule
+                        const newRule = {
+                            scope: setting.scope,
+                            settings: {
+                                foreground: setting.color,
+                                ...(setting.fontStyle && { fontStyle: setting.fontStyle })
+                            }
+                        };
+                        
+                        // Update existing rules or add new one
+                        updatedRules = [...existingRules.filter(rule => rule.scope !== setting.scope), newRule];
+                    }
+                    
                     const updatedTokens = {
                         ...existingTokens,
                         textMateRules: updatedRules

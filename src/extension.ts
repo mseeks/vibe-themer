@@ -14,6 +14,7 @@ import { selectOpenAIModel, resetOpenAIModel } from './commands/modelSelectComma
 import { testCurrentThemeReading } from './utils/themeStateTest';
 import { testCountParsing } from './utils/countParsingTest';
 import { testContextInjection } from './utils/contextInjectionTest';
+import { testRemoveValues } from './utils/removeValueTest';
 
 // Reference to the OpenAI client instance
 let openai: OpenAI | undefined;
@@ -85,6 +86,11 @@ export function activate(context: vscode.ExtensionContext) {
             await testContextInjection();
         });
         context.subscriptions.push(testContextInjectionCommand);
+
+        let testRemoveValuesCommand = vscode.commands.registerCommand('vibeThemer.testRemoveValues', async () => {
+            await testRemoveValues();
+        });
+        context.subscriptions.push(testRemoveValuesCommand);
     }
 
     // Initialize OpenAI client AFTER command registration

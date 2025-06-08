@@ -149,7 +149,7 @@ const generateTheme = (context: vscode.ExtensionContext) =>
 
 Instead of: *"That's an excellent approach! I'll implement exactly as specified."*
 
-More like: *"Nice idea! Though I'm wondering - would users actually want to see all 150+ settings streaming by? Maybe we batch the progress updates so it's less overwhelming?"*
+More like: *"Nice idea! Though I'm wondering - would users actually want to see all theme settings streaming by? Maybe we batch the progress updates so it's less overwhelming?"*
 
 Instead of: *"I believe we should carefully consider the architectural implications..."*
 
@@ -159,7 +159,7 @@ More like: *"This adds another service layer. Could we just extend `themeGenerat
 
 ### What is Vibe Themer?
 
-**Vibe Themer** is a revolutionary AI-powered VS Code extension that transforms natural language descriptions into beautiful, comprehensive color themes. Users describe their ideal coding atmosphere (e.g., "cozy autumn evening", "cyberpunk neon city", "calm ocean depths") and watch their theme apply in real-time as AI generates 80-150+ color settings.
+**Vibe Themer** is a revolutionary AI-powered VS Code extension that transforms natural language descriptions into beautiful, comprehensive color themes. Users describe their ideal coding atmosphere (e.g., "cozy autumn evening", "cyberpunk neon city", "calm ocean depths") and watch their theme apply in real-time as AI generates a complete theme.
 
 ### Unique Project Characteristics
 
@@ -170,7 +170,7 @@ This entire extension—every line of code and feature—was crafted using AI wi
 Unlike traditional theme generators, Vibe Themer streams theme settings live as AI generates them. Users watch their editor transform in real-time, creating a magical, dynamic experience. This streaming nature is core to both the technical architecture and user experience.
 
 #### 🌈 **Comprehensive Visual Coverage**
-Themes affect every visual element: editor background, syntax highlighting, activity bar, sidebar, status bar, tabs, panels, terminal, buttons, and more. The AI generates cohesive color relationships across 80-150+ individual settings.
+Themes affect every visual element: editor background, syntax highlighting, activity bar, sidebar, status bar, tabs, panels, terminal, buttons, and more. The AI generates cohesive color relationships across a complete theme.
 
 #### 🔐 **Security-First Approach**
 User privacy and security are paramount. OpenAI API keys are stored in VS Code's encrypted secret storage, and only theme descriptions are sent to AI—never user code or personal data.
@@ -241,13 +241,13 @@ suggestedAction: "Try a more descriptive prompt like 'cozy autumn evening with g
 - [docs/THEME_ITERATION.md](../docs/THEME_ITERATION.md) - Theme iteration feature specification (in progress)
 - [docs/CURRENT_THEME_STATE.md](../docs/CURRENT_THEME_STATE.md) - Implementation of current theme state reading (completed)
 
-### 🚧 **Active Development**
-The extension is currently adding **theme iteration** capabilities - allowing users to modify existing themes incrementally instead of generating entirely new ones. When working on code:
+### 🚧 **Current Capabilities**
+The extension now has **complete theme iteration functionality** - users can modify existing themes incrementally using natural language (e.g., "make it warmer", "darker background", "remove the purple accents"). When working on code:
 
-1. **Check existing implementations** in the theme state reading utilities (`themeCore.ts`)
-2. **Follow incremental patterns** that don't break existing functionality
-3. **Reference feature docs** before making architectural changes
-4. **Maintain backwards compatibility** with existing theme generation workflow
+1. **Leverage existing patterns** from the theme state reading utilities (`themeCore.ts`)
+2. **Follow incremental approaches** that build on the solid foundation
+3. **Reference comprehensive docs** in the docs/ folder for context
+4. **Maintain backwards compatibility** - all changes are non-breaking enhancements
 
 ---
 
