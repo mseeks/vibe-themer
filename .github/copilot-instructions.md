@@ -272,33 +272,27 @@ The extension has **complete theme iteration functionality** shipped in v1.0.15.
 
 ### 📋 **Next Up: Enhanced Theme Prompt Input (ADR-002)**
 
-**Status**: ADR approved, implementation not yet started
+**Status**: ADR approved, Phase 1-2 completed, Phase 3 next
 
-**Planned Feature**: AI-powered theme prompt suggestions to replace the basic `showInputBox` with an intelligent QuickPick interface:
+**Completed Features**: QuickPick interface with curated suggestions replaces basic input box
 
-**Proposed Features**:
+**Current State**: Phase 2 ✅ Complete - Users now see intelligent QuickPick with 6 random curated suggestions per session, free-form typing alongside suggestions, clean UI with personality
 
-- AI-generated creative suggestions using OpenAI API (4-6 suggestions per session)
-- Fallback to curated examples when AI unavailable
-- Free-form typing alongside suggestions
-- Real-time loading states with personality
-- Type-safe implementation following project architecture
-
-**Current State**: ADR approved and documented, ready for implementation
+**Next Implementation**: Phase 3 - AI-powered suggestion generation using OpenAI API
 
 **Key Files**:
 
 - `docs/adrs/002-theme-prompt-enhancement.md` - Complete ADR with decision rationale
-- `docs/adrs/002-theme-prompt-enhancement-implementation.md` - Implementation plan ready for execution
+- `docs/adrs/002-theme-prompt-enhancement-implementation.md` - Implementation plan and progress tracking
 
-**Next Steps**: Begin Phase 1 implementation - create type definitions and curated fallback examples
+**Next Steps**: Begin Phase 3 implementation - add AI-powered suggestion generation to complement existing curated suggestions
 
 ### 🏗️ **ADR Structure**
 
 Architecture Decision Records are stored in `docs/adrs/` following the pattern:
 
 - `001-theme-iteration-feature.md` - Theme iteration feature design and implementation (✅ Complete)
-- `002-theme-prompt-enhancement.md` - Enhanced prompt input with AI suggestions (📋 Approved, not started)
+- `002-theme-prompt-enhancement.md` - Enhanced prompt input with AI suggestions (⏳ Phase 1-2 complete, Phase 3 next)
 - Future ADRs will follow `XXX-feature-name.md` naming convention
 
 When working on significant features or architectural decisions:

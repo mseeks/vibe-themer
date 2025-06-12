@@ -3,6 +3,7 @@ import { ensureOpenAIClient as ensureOpenAIClientCore, getCurrentClientState } f
 import { applyStreamingThemeSetting, parseStreamingThemeLine, StreamingThemeSetting, getCurrentThemeState } from './themeCore';
 import { getSelectedOpenAIModel } from '../commands/modelSelectCommand';
 import { OpenAIServiceResult, OpenAIServiceError } from '../types/theme';
+import { showThemePromptPicker } from '../utils/promptPicker.js';
 import * as fs from "fs";
 import * as path from "path";
 
@@ -153,20 +154,7 @@ export async function runThemeGenerationWorkflow(
 
     const openai = openaiResult.data;
 
-    const themeDescription = await vscode.window.showInputBox({
-        prompt: '🎨 Describe your ideal coding atmosphere or modify your current theme (e.g., "warm sunset over mountains", "make it warmer", "darker background")',
-        placeHolder: 'New theme: "cozy autumn evening" | Modify existing: "remove purple accents"',
-        value: '',
-        validateInput: (value) => {
-            if (!value.trim()) {
-                return 'Please enter a theme description';
-            }
-            if (value.trim().length < 3) {
-                return 'Please provide a more detailed description for better results';
-            }
-            return null;
-        }
-    });
+    const themeDescription = await showThemePromptPicker();
     if (!themeDescription) {
         vscode.window.showInformationMessage('No theme description provided. Try again when you\'re ready to create or modify your perfect coding atmosphere! 🎨', { modal: true });
         return;

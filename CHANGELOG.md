@@ -2,6 +2,27 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [1.1.0] - 2025-06-11
+
+### Added
+- **🎨 Enhanced Theme Prompt Interface (Phase 2)**: Replaced basic input box with intelligent QuickPick interface
+- **Curated Theme Suggestions**: Users now see 6 random creative suggestions per session for inspiration
+- **Free-Form Typing Support**: Full custom prompt capability alongside curated suggestions
+- **Personality-Driven UI**: Clean interface with emojis and Vibe Themer's playful character
+
+### Improved
+- **Better Discovery**: Users no longer face "blank slate" problem when generating themes
+- **Creative Inspiration**: Creative prompts like "existential dread but make it cozy" and "warm sunset over mountains"
+- **User Experience**: Smooth QuickPick interface with proper validation and cancellation support
+- **Input Flexibility**: Power users maintain complete freedom with custom prompts
+
+### Technical
+- Added `promptPicker.ts` with `showThemePromptPicker()` function replacing `showInputBox`
+- Integrated `suggestionCore.ts` curated examples with QuickPick interface
+- Enhanced input validation with user-friendly error messages
+- Graceful cancellation and error handling
+- No breaking changes to existing workflow
+
 ## [1.0.16] - 2025-06-07
 
 ### Added

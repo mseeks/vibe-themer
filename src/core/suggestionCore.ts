@@ -37,43 +37,6 @@ export const CURATED_SUGGESTIONS: readonly ThemePromptSuggestion[] = [
         label: "existential dread but make it cozy", 
         description: "Philosophical depths with warm comfort",
         source: 'curated_fallback' 
-    },
-    
-    // Additional creative examples from iteration section
-    { 
-        label: "needs more cat energy", 
-        description: "Playful, independent, and mysteriously elegant",
-        source: 'curated_fallback' 
-    },
-    { 
-        label: "what if this theme went to therapy", 
-        description: "Self-aware colors with emotional intelligence",
-        source: 'curated_fallback' 
-    },
-    { 
-        label: "make it taste like lavender", 
-        description: "Soft purple and calming neutral tones",
-        source: 'curated_fallback' 
-    },
-    { 
-        label: "3am coding session with warm amber highlights", 
-        description: "Deep focus atmosphere with gentle warmth",
-        source: 'curated_fallback' 
-    },
-    { 
-        label: "cyberpunk cat cafe vibes", 
-        description: "Futuristic neon meets cozy comfort",
-        source: 'curated_fallback' 
-    },
-    { 
-        label: "sunset reflecting off your monitor", 
-        description: "Natural light meeting digital workspace",
-        source: 'curated_fallback' 
-    },
-    { 
-        label: "if autumn had a debugging session", 
-        description: "Seasonal warmth with problem-solving energy",
-        source: 'curated_fallback' 
     }
 ] as const;
 
