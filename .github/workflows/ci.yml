@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check (types · lint · build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      # npm ci installs the committed lockfile exactly; `compile` runs
+      # tsc --noEmit + eslint + the esbuild bundle. The @vscode/test-electron
+      # suite needs a headless VS Code (xvfb) and is left out of the oracle.
+      - run: npm ci
+      - run: npm run compile
