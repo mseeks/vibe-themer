@@ -41,6 +41,8 @@ export interface HarnessOptions {
   readonly completionChoice?: KeepOrReset;
   readonly workspaceFolders?: boolean;
   readonly currentTheme?: CurrentTheme;
+  /** Make every settings write fail (simulates an unwritable settings.json). */
+  readonly failApply?: boolean;
 }
 
 export interface TokenRule {
@@ -198,6 +200,9 @@ export const harness = (options: HarnessOptions = {}): Harness => {
       readCurrentTheme: () => options.currentTheme ?? emptyTheme,
       hasWorkspaceFolders: () => options.workspaceFolders ?? false,
       applySetting: async (setting, _preference) => {
+        if (options.failApply === true) {
+          return { _tag: 'Err', error: { _tag: 'AllTargetsFailed' } };
+        }
         applyToState(setting);
         return ok('global');
       },

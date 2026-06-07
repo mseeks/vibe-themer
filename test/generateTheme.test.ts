@@ -144,6 +144,30 @@ describe('generateTheme — failures', () => {
       assert.equal(result.error._tag, 'Aborted');
     }
   });
+
+  it('reports a write failure distinctly from malformed output', async () => {
+    // Valid directives whose *writes* all fail must abort as a config/IO error,
+    // not as "too many malformed lines" — they never spend the parse budget.
+    const lines = ['COUNT:6'];
+    for (let i = 0; i < 6; i += 1) {
+      lines.push(`SELECTOR:editor.k${i}=#111111`);
+    }
+    const h = harness({
+      storedKey: VALID_KEY,
+      vibe: 'cozy',
+      streamText: `${lines.join('\n')}\n`,
+      chunkSize: 1000,
+      failApply: true,
+    });
+    const result = await generateTheme(h.caps);
+
+    assert.equal(result._tag, 'Err');
+    if (result._tag === 'Err' && result.error._tag === 'WriteAborted') {
+      assert.equal(result.error.applied, 0);
+    } else {
+      assert.fail(`expected WriteAborted, got ${JSON.stringify(result)}`);
+    }
+  });
 });
 
 describe('generateTheme — cancellation and reset', () => {
