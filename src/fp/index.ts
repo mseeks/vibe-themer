@@ -8,8 +8,8 @@
  * never collide.
  */
 
-export { pipe, identity, constant, tap } from './function';
-export { matchTag, assertNever, type HasTag } from './match';
+export { pipe } from './function';
+export { matchTag, type HasTag } from './match';
 export { type Brand, type Tagged } from './brand';
 export { redact, expose, type Redacted } from './redacted';
 export {
