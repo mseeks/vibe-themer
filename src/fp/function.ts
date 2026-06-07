@@ -1,26 +1,9 @@
 /**
- * Function plumbing for the functional core: `pipe` for left-to-right data flow
- * and a handful of combinators. Everything downstream reads as a pipeline, which
- * is what gives the codebase its DSL feel.
+ * `pipe` threads a value through a sequence of unary functions, left to right.
+ * Everything downstream reads as a pipeline, which is what gives the codebase its
+ * DSL feel. The overloads preserve full type inference at each step; the
+ * implementation is a fold.
  */
-
-export const identity = <A>(a: A): A => a;
-
-export const constant =
-  <A>(a: A) =>
-  (): A =>
-    a;
-
-/** Side-effecting tap that returns its input unchanged — for logging in a pipe. */
-export const tap =
-  <A>(f: (a: A) => void) =>
-  (a: A): A => {
-    f(a);
-    return a;
-  };
-
-// `pipe` threads a value through a sequence of unary functions. The overloads
-// preserve full type inference at each step; the implementation is a fold.
 export function pipe<A>(a: A): A;
 export function pipe<A, B>(a: A, ab: (a: A) => B): B;
 export function pipe<A, B, C>(a: A, ab: (a: A) => B, bc: (b: B) => C): C;
