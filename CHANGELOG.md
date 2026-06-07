@@ -2,6 +2,45 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [2.0.0] - 2026-06-06
+
+A ground-up rewrite. Same user experience, a completely new foundation:
+domain-driven design with strict functional typing (hexagonal "functional core,
+imperative shell"). See `docs/ARCHITECTURE.md`.
+
+### Fixed
+- **Security:** the OpenAI API key could be written to the console on a generation
+  error (it rode inside the logged client state). Keys are now wrapped in a
+  `Redacted` type that renders as `<redacted>` everywhere and is unwrapped only at
+  the storage/SDK boundary, so the leak is unrepresentable.
+- **Theme iteration:** current customizations are now read per-scope via
+  `config.inspect()`. v1 read the merged value twice, so workspace vs global could
+  not be distinguished and scope detection was meaningless.
+- **First progress message** is shown immediately again (v1 seeded the throttle
+  with the current time, so the first AI message could be withheld up to 800 ms).
+- **System prompt:** removed ~18% of duplicated content (five repeated selector
+  sections). Every API call is cheaper; all 752 selectors remain covered.
+- **Completeness label** in the success popup is now relative to the model's own
+  estimate instead of fixed `<50/<80` thresholds, so a small theme isn't mislabeled.
+
+### Changed
+- Architecture: `fp` (Result/Option/branded types/parser combinators) → `domain`
+  (smart constructors, illegal states unrepresentable) → `protocol` (the streaming
+  grammar) → `ports` (the seam) → `application` (use cases) → `adapters` (VS Code,
+  OpenAI). The core is pure and fully unit-testable.
+- OpenAI errors are classified by HTTP status instead of substring matching.
+- Test suite added (Node's built-in `node:test`, bundled with esbuild); `npm test`
+  is now real instead of a vacuous, never-run harness.
+- Maximum TypeScript strictness (`noUncheckedIndexedAccess`,
+  `exactOptionalPropertyTypes`, and more).
+
+### Removed
+- The four development-only palette commands (`Test Current Theme State`,
+  `Test COUNT Parsing`, `Test Context Injection`, `Test REMOVE Value`). They were
+  manual console loggers visible only in the Extension Development Host and are
+  replaced by the automated test suite. No end-user-visible change.
+- Dead code: the unused color-utility module and the unused batch theme-apply path.
+
 ## [1.1.0] - 2025-06-11
 
 ### Added

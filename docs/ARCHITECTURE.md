@@ -1,55 +1,108 @@
-# Vibe Themer Architecture
+# Vibe Themer Architecture (v2)
 
-## Overview
+Vibe Themer turns a natural-language "vibe" into a VS Code color theme, streaming
+each setting from the OpenAI API and applying it live. v2 is a ground-up rewrite
+around a **functional core, imperative shell** (hexagonal / ports-and-adapters)
+design with strict, domain-driven typing.
 
-Vibe Themer is a VS Code extension that generates custom color themes using AI based on natural language descriptions. The extension follows a pragmatic layered architecture with clear separation of concerns.
+## The guiding idea
 
-## Architecture Layers
+Make illegal states unrepresentable, then push every side effect to the edge.
+The center of the program is pure and total; the messy parts (VS Code, the network,
+the clock) live behind interfaces and are swapped for fakes in tests.
 
-### Extension Layer (`extension.ts`)
-- **Responsibility**: Command registration and activation lifecycle
-- **Dependencies**: VS Code API, Service Layer
-- **Key Functions**: Extension activation, command registration, context management
+```
+        ┌──────────────────────────────────────────────┐
+        │ extension.ts  (composition root)              │
+        │   builds adapters → Capabilities → commands   │
+        └───────────────┬───────────────┬──────────────┘
+                        │               │
+                 adapters/         application/         ← orchestration (impure-ish)
+            (vscode, openai)       use cases             returns Result, no throws
+                        │               │
+                        └──────┬────────┘
+                               │ depends only on
+                        ports/  (interfaces)            ← the seam
+                               │
+                     domain/ + protocol/ + fp/          ← pure, total, no I/O
+```
 
-### Service Layer (`*Service.ts`)
-- **Responsibility**: Public APIs and workflow orchestration
-- **Components**:
-  - `themeGenerationService.ts` - Main theme generation workflow
-  - `openaiService.ts` - OpenAI API integration and model management
-- **Dependencies**: Core Layer, VS Code API
+Dependencies point inward. `domain`, `protocol`, and `fp` know nothing about VS
+Code or OpenAI. `application` depends on `ports` (interfaces), never on adapters.
+`adapters` and `extension.ts` are the only files that import `vscode` or `openai`.
 
-### Core Layer (`*Core.ts`)
-- **Responsibility**: Pure domain logic and business rules
-- **Components**:
-  - `themeCore.ts` - Theme generation and color scheme logic
-  - `openaiCore.ts` - OpenAI client management and configuration
-- **Dependencies**: None (pure functions)
+## Layers
 
-## Command Architecture
+### `fp/` — the functional prelude
 
-Commands are organized in the `commands/` directory following the Command Pattern:
+A small, dependency-free kernel: `Result`/`Option`/`AsyncResult` (errors and
+absence as values, never thrown), `pipe`, `matchTag` (exhaustive tagged-union
+matching), `Brand` (nominal types), `Redacted` (secrets that can't be printed),
+and a tiny parser-combinator set. One import surface: `import { ... } from './fp'`.
 
-- `clearApiKeyCommand.ts` - Manages OpenAI API key clearing
-- `modelSelectCommand.ts` - Handles AI model selection
-- `resetThemeCommand.ts` - Resets theme customizations
+### `domain/` — value objects and rules
 
-## Data Flow
+Every domain value has a **smart constructor** and no other way in, so possession
+of the value is proof it's valid: `Vibe`, `ColorValue` (Hex | Named | Remove),
+`WorkbenchSelector`, `TokenScope`, `FontStyle`, `ApiKey` (wrapped in `Redacted`),
+`ModelId`, `StreamingDirective`, `ThemeSetting`, `ConfigurationScope`,
+`CurrentTheme`, `Coverage`. Errors are tagged unions with centralized rendering.
 
-1. **User Input** → Command handler receives user prompt
-2. **Validation** → Core layer validates and processes input
-3. **AI Generation** → OpenAI service generates theme data
-4. **Theme Application** → Theme core applies colors to VS Code
-5. **State Management** → Extension context stores theme state
+### `protocol/` — the streaming grammar
 
-## Key Design Principles
+`streamingParser.ts` decodes one wire line (`COUNT:` / `SELECTOR:` / `TOKEN:` /
+`MESSAGE:`) using the combinators for structure and the domain constructors for
+field validation. A parsed directive is fully well-typed.
 
-- **Type-Driven Development**: Rich TypeScript types prevent invalid states
-- **Functional Programming**: Pure functions for business logic
-- **Domain-Driven Design**: Clear domain models and ubiquitous language
-- **Dependency Injection**: Explicit dependencies for testability
+### `ports/` — the seam
 
-## Configuration Management
+Interfaces for every effect: `OpenAiGateway`, `ConfigStore`, `SecretStore`,
+`Preferences`, `PromptLibrary`, `Ui`, `Clock`, `Logger`, bundled into one
+`Capabilities` record. Plus the port-error unions and their `UserMessage`
+rendering.
 
-- OpenAI API keys stored securely in VS Code's secret storage
-- Model preferences stored in workspace/global settings
-- Theme state maintained in extension context
+### `application/` — use cases
+
+Pure-ish orchestration returning `Result`: `generateTheme` (the streaming loop),
+`provisionApiKey` (the key state machine), and the maintenance commands
+(`resetTheme`, `clearApiKey`, `selectModel`, `resetModel`). Decisions are
+delegated to pure functions (`parseLine`, `progressPercent`, `coverage`); effects
+go through ports.
+
+### `adapters/` — the shell
+
+`adapters/vscode/*` implement the ports against the VS Code API;
+`adapters/openai/gateway.ts` implements `OpenAiGateway` against the OpenAI SDK,
+classifying errors by HTTP status. Thin and obviously correct.
+
+### `commands.ts` + `extension.ts`
+
+`commands.ts` is the single source of truth for command IDs and their handlers
+(a test asserts these match `package.json`). `extension.ts` is the composition
+root: build adapters, assemble `Capabilities`, register commands — fully
+synchronous activation.
+
+## Why this shape
+
+- **Testability.** The entire core runs against in-memory fakes (`test/support/
+  harness.ts`), so the full Change Theme flow — streaming, live application,
+  cancellation, error tolerance — is exercised with no VS Code and no network.
+- **Safety by type.** Branded values, `Redacted` secrets, and exhaustive matches
+  turn whole classes of v1 bugs (a leaked key, an invalid color, an unhandled
+  variant) into compile errors.
+- **One direction of dependency.** Swapping an adapter (or a model provider) never
+  touches the core.
+
+## Configuration & secrets
+
+- API key: VS Code `SecretStorage`, wrapped in `Redacted` from validation onward.
+- Selected model: `globalState` via the `Preferences` port (default `gpt-4.1`).
+- Theme state: read per-scope via `config.inspect()` so global vs workspace are
+  actually distinguished.
+
+## Testing & build
+
+- `npm run check-types` — `tsc --noEmit` at maximum strictness over `src` + `test`.
+- `npm test` — esbuild bundles `test/run.ts` and runs it on Node's built-in
+  `node:test` (no test-runner dependency, single process).
+- `npm run compile` — check-types + ESLint + the esbuild extension bundle.

@@ -34,7 +34,7 @@
 ## Requirements
 
 - A valid OpenAI API key ([get one here](https://platform.openai.com/))
-- Visual Studio Code 1.68.0 or higher
+- Visual Studio Code 1.74.0 or higher
 - Internet connection (for OpenAI API access)
 
 ## 🚀 Quick Start
@@ -134,7 +134,7 @@ To switch back to your original theme or try a different base theme:
 
 ## ⚙️ Requirements
 
-- ✅ Visual Studio Code 1.68.0 or higher
+- ✅ Visual Studio Code 1.74.0 or higher
 - 🔑 Valid OpenAI API key ([get one here](https://platform.openai.com/))
 - 🌐 Internet connection for OpenAI API access
 
@@ -163,26 +163,14 @@ This project started as a challenge: **How far can pure AI-driven "vibe coding" 
 
 ---
 
-## 🛠️ Development Commands (For Extension Developers)
+## 🛠️ For Developers
 
-> **⚠️ DEVELOPER ONLY**: These commands are intended for extension development and debugging. Regular users should not need these commands.
+v2 is a ground-up rewrite with a functional-core / imperative-shell architecture
+(domain-driven design, strict functional typing). See
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Common commands:
 
-The following commands are available for testing and development purposes:
-
-| Command                                         | Description                                                | Purpose                                        |
-| ----------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------- |
-| **Vibe Themer: Test Current Theme State (Dev)** | 📊 Display current theme customizations and scope detection | Test current theme state reading functionality |
-| **Vibe Themer: Test Context Injection (Dev)**   | 🧪 Test AI context injection with current theme data        | Verify context formatting for AI prompts       |
-| **Vibe Themer: Test Remove Value (Dev)**        | 🗑️ Test REMOVE value handling for clearing customizations   | Debug color removal functionality              |
-| **Vibe Themer: Test Count Parsing (Dev)**       | 🔢 Test streaming progress count parsing from AI responses  | Debug progress tracking accuracy               |
-
-These commands help verify:
-- **Theme State Reading**: Ensure current customizations are properly detected
-- **Context Injection**: Verify AI receives complete theme context for iteration
-- **Remove Functionality**: Test that color removal properly clears VS Code overrides
-- **Progress Tracking**: Validate streaming progress count parsing
-
-**Usage**: Only use these commands if you're contributing to Vibe Themer development or debugging issues. Results appear in VS Code's Output panel under "Vibe Themer".
+- `npm run compile` — type-check, lint, and bundle the extension
+- `npm test` — run the unit + integration suite (Node's built-in `node:test`)
 
 ---
 

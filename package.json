@@ -1,8 +1,8 @@
 {
   "name": "vibe-themer",
   "displayName": "Vibe Themer",
-  "description": "🎨 AI-powered VS Code theme generator. Describe your vibe, watch real-time streaming as OpenAI creates comprehensive custom themes with a complete theme. 🤖 100% vibe-coded using VS Code's agentic AI!",
-  "version": "1.1.0",
+  "description": "🎨 AI-powered VS Code theme generator. Describe your vibe, watch real-time streaming as OpenAI creates comprehensive custom themes. 🤖 100% vibe-coded using VS Code's agentic AI!",
+  "version": "2.0.0",
   "publisher": "mseeks",
   "icon": "icon.png",
   "repository": {
@@ -55,26 +55,6 @@
       {
         "command": "vibeThemer.resetModel",
         "title": "Vibe Themer: Reset OpenAI Model Selection"
-      },
-      {
-        "command": "vibeThemer.testThemeState",
-        "title": "Vibe Themer: Test Current Theme State (Dev)",
-        "when": "vibeThemer.development"
-      },
-      {
-        "command": "vibeThemer.testCountParsing",
-        "title": "Vibe Themer: Test COUNT Parsing (Dev)",
-        "when": "vibeThemer.development"
-      },
-      {
-        "command": "vibeThemer.testContextInjection",
-        "title": "Vibe Themer: Test Context Injection (Dev)",
-        "when": "vibeThemer.development"
-      },
-      {
-        "command": "vibeThemer.testRemoveValue",
-        "title": "Vibe Themer: Test REMOVE Value Handling (Dev)",
-        "when": "vibeThemer.development"
       }
     ]
   },
@@ -83,18 +63,14 @@
     "compile": "npm run check-types && npm run lint && node ./esbuild.js",
     "check-types": "tsc --noEmit",
     "watch": "npm run check-types && node ./esbuild.js --watch",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "vscode-test"
+    "lint": "eslint src test --ext ts",
+    "test": "node ./esbuild.test.js && node out/test.cjs"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.6",
     "@types/node": "^20.17.58",
     "@types/vscode": "^1.74.0",
     "@typescript-eslint/eslint-plugin": "^7.7.1",
     "@typescript-eslint/parser": "^7.7.1",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.3.9",
     "esbuild": "^0.25.12",
     "eslint": "^8.57.0",
     "typescript": "^5.4.5"
