@@ -1,0 +1,64 @@
+/**
+ * Function plumbing for the functional core: `pipe` for left-to-right data flow
+ * and a handful of combinators. Everything downstream reads as a pipeline, which
+ * is what gives the codebase its DSL feel.
+ */
+
+export const identity = <A>(a: A): A => a;
+
+export const constant =
+  <A>(a: A) =>
+  (): A =>
+    a;
+
+/** Side-effecting tap that returns its input unchanged — for logging in a pipe. */
+export const tap =
+  <A>(f: (a: A) => void) =>
+  (a: A): A => {
+    f(a);
+    return a;
+  };
+
+// `pipe` threads a value through a sequence of unary functions. The overloads
+// preserve full type inference at each step; the implementation is a fold.
+export function pipe<A>(a: A): A;
+export function pipe<A, B>(a: A, ab: (a: A) => B): B;
+export function pipe<A, B, C>(a: A, ab: (a: A) => B, bc: (b: B) => C): C;
+export function pipe<A, B, C, D>(a: A, ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D): D;
+export function pipe<A, B, C, D, E>(
+  a: A,
+  ab: (a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+): E;
+export function pipe<A, B, C, D, E, F>(
+  a: A,
+  ab: (a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+  ef: (e: E) => F,
+): F;
+export function pipe<A, B, C, D, E, F, G>(
+  a: A,
+  ab: (a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+  ef: (e: E) => F,
+  fg: (f: F) => G,
+): G;
+export function pipe<A, B, C, D, E, F, G, H>(
+  a: A,
+  ab: (a: A) => B,
+  bc: (b: B) => C,
+  cd: (c: C) => D,
+  de: (d: D) => E,
+  ef: (e: E) => F,
+  fg: (f: F) => G,
+  gh: (g: G) => H,
+): H;
+export function pipe(a: unknown, ...fns: ReadonlyArray<(x: unknown) => unknown>): unknown {
+  return fns.reduce((acc, fn) => fn(acc), a);
+}

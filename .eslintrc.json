@@ -2,7 +2,7 @@
     "root": true,
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "ecmaVersion": 6,
+        "ecmaVersion": 2022,
         "sourceType": "module"
     },
     "plugins": [
@@ -17,9 +17,9 @@
             }
         ],
         "@typescript-eslint/semi": "warn",
-        "curly": "warn",
-        "eqeqeq": "warn",
-        "no-throw-literal": "warn",
+        "curly": "error",
+        "eqeqeq": [ "error", "always", { "null": "ignore" } ],
+        "no-throw-literal": "error",
         "semi": "off"
     },
     "ignorePatterns": [
