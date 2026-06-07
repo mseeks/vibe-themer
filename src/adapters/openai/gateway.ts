@@ -3,23 +3,11 @@ import { AsyncResult, type AsyncResultType, expose, ok, type Redacted } from '..
 import { type ApiKey } from '../../domain/apiKey';
 import { modelText } from '../../domain/model';
 import { type ProviderAdapter, type ProviderError, type ProviderRequest } from '../../ports';
+import { classifyByStatus } from '../classify';
 
 /** Classify an SDK error by status code, instead of v1's substring sniffing. */
-const classify = (e: unknown): ProviderError => {
-  if (e instanceof OpenAI.APIError) {
-    if (e.status === 401 || e.status === 403) {
-      return { _tag: 'AuthFailed' };
-    }
-    if (e.status === 429) {
-      return { _tag: 'RateLimited' };
-    }
-    if (e.status === undefined) {
-      return { _tag: 'Network' };
-    }
-    return { _tag: 'Unexpected', detail: e.message };
-  }
-  return { _tag: 'Network' };
-};
+const classify = (e: unknown): ProviderError =>
+  e instanceof OpenAI.APIError ? classifyByStatus(e.status, e.message) : { _tag: 'Network' };
 
 const clientFor = (key: Redacted<ApiKey>): OpenAI => new OpenAI({ apiKey: expose(key) });
 
@@ -28,9 +16,9 @@ const clientFor = (key: Redacted<ApiKey>): OpenAI => new OpenAI({ apiKey: expose
 // Non-reasoning custom models (e.g. gpt-4o) reject the parameter, so only send it
 // where it's supported.
 const REASONING_FAMILY = /^(gpt-5|o[0-9])/i;
-const isReasoningModel = (id: string): boolean => REASONING_FAMILY.test(id);
+export const isReasoningModel = (id: string): boolean => REASONING_FAMILY.test(id);
 
-async function* toContentStream(
+export async function* toContentStream(
   stream: AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>,
 ): AsyncIterable<string> {
   // A failure *after* the stream opens (429 once tokens flow, dropped socket, idle

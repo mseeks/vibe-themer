@@ -12,4 +12,5 @@ import './progress.test';
 import './theme.test';
 import './context.test';
 import './commandIds.test';
+import './adapters.test';
 import './generateTheme.test';

@@ -79,6 +79,9 @@ describe('generateTheme — happy path', () => {
     const result = await generateTheme(h.caps);
 
     assert.deepEqual(h.captured.keySetProviders, ['anthropic']);
+    // The gateway is actually asked to stream the Anthropic model, not just the key.
+    assert.equal(h.captured.streamProvider, 'anthropic');
+    assert.equal(h.captured.streamModel, 'claude-sonnet-4-6');
     assert.equal(h.colors.get('editor.background'), '#101010');
     if (result._tag === 'Ok') {
       assert.equal(result.value._tag, 'Completed');
