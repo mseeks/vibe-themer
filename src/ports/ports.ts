@@ -92,6 +92,8 @@ export interface ModelGateway {
 export interface ConfigStore {
   readonly readCurrentTheme: () => CurrentTheme;
   readonly hasWorkspaceFolders: () => boolean;
+  /** The user's `vibeThemer.applyTo` preference — which scope to write first. */
+  readonly applyTo: () => WriteTarget;
   /** Apply one setting, trying the preference order until one target succeeds. */
   readonly applySetting: (
     setting: ThemeSetting,

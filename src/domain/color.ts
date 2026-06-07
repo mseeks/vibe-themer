@@ -8,7 +8,7 @@
 import { type Brand, matchTag, Result, type ResultType } from '../fp';
 import { malformed, type ValidationError } from './errors';
 
-/** A lowercase `#rgb` / `#rrggbb` / `#rrggbbaa` string, proven by construction. */
+/** A lowercase `#rgb` / `#rgba` / `#rrggbb` / `#rrggbbaa` string, proven by construction. */
 export type HexColor = Brand<string, 'HexColor'>;
 
 export type NamedColor = 'transparent' | 'inherit' | 'initial' | 'unset';
@@ -18,7 +18,10 @@ export type ColorValue =
   | { readonly _tag: 'Named'; readonly value: NamedColor }
   | { readonly _tag: 'Remove' };
 
-const HEX_RE = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+// 3/4/6/8 digits — all the hex forms VS Code's color customizations accept
+// (#rgb, #rgba, #rrggbb, #rrggbbaa). Omitting #rgba meant a valid color counted
+// as a malformed line toward the abort budget.
+const HEX_RE = /^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 const NAMED: ReadonlySet<string> = new Set<NamedColor>([
   'transparent',
   'inherit',
@@ -45,7 +48,7 @@ export const parseColor = (raw: string): ResultType<ValidationError, ColorValue>
     return Result.ok(named(lower as NamedColor));
   }
   return Result.err(
-    malformed('color', 'a hex code (#rgb/#rrggbb/#rrggbbaa), a CSS keyword, or REMOVE', trimmed),
+    malformed('color', 'a hex code (#rgb/#rgba/#rrggbb/#rrggbbaa), a CSS keyword, or REMOVE', trimmed),
   );
 };
 

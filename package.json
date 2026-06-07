@@ -68,7 +68,25 @@
         "command": "vibeThemer.resetModel",
         "title": "Vibe Themer: Reset Model Selection"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Vibe Themer",
+      "properties": {
+        "vibeThemer.applyTo": {
+          "type": "string",
+          "enum": [
+            "global",
+            "workspace"
+          ],
+          "enumDescriptions": [
+            "User (global) settings — the theme follows you across all windows.",
+            "The current workspace's settings — falls back to global if no folder is open."
+          ],
+          "default": "global",
+          "description": "Where Vibe Themer writes generated theme customizations."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

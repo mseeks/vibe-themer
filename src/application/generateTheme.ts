@@ -268,7 +268,7 @@ const runGeneration = async (
 ): AsyncResultType<GenerationError, GenerationOutcome> => {
   const current = caps.config.readCurrentTheme();
   const user = buildUserPrompt(current, vibe);
-  const preference = writePreference(caps.config.hasWorkspaceFolders());
+  const preference = writePreference(caps.config.applyTo(), caps.config.hasWorkspaceFolders());
 
   const streamResult = await caps.gateway.streamTheme({
     provider: model.provider,

@@ -5,13 +5,15 @@ import { parseVibe } from '../src/domain/vibe';
 import { parseSelector } from '../src/domain/selector';
 import { parseTokenScope } from '../src/domain/tokenScope';
 import { parseFontStyle } from '../src/domain/fontStyle';
+import { writePreference } from '../src/domain/scope';
 import { parseApiKey, renderApiKeyError } from '../src/domain/apiKey';
 import { CATALOG, DEFAULT_MODEL, makeModel, modelText, parseModelId, sameModel } from '../src/domain/model';
 import { expose } from '../src/fp';
 
 describe('parseColor', () => {
-  it('accepts 3/6/8-digit hex (lowercased), keywords, and REMOVE', () => {
+  it('accepts 3/4/6/8-digit hex (lowercased), keywords, and REMOVE', () => {
     assert.deepEqual(parseColor('#ABC'), { _tag: 'Ok', value: { _tag: 'Hex', value: '#abc' } });
+    assert.deepEqual(parseColor('#FFF8'), { _tag: 'Ok', value: { _tag: 'Hex', value: '#fff8' } });
     assert.deepEqual(parseColor('  #1e1e1e '), {
       _tag: 'Ok',
       value: { _tag: 'Hex', value: '#1e1e1e' },
@@ -53,6 +55,16 @@ describe('parseSelector / parseTokenScope', () => {
     assert.equal(parseSelector('')._tag, 'Err');
     assert.equal(parseTokenScope('comment.line.double-slash')._tag, 'Ok');
     assert.equal(parseTokenScope('with=equals')._tag, 'Err');
+  });
+});
+
+describe('writePreference', () => {
+  it('orders targets by the user preference, with workspace gated on an open folder', () => {
+    assert.deepEqual(writePreference('global', true), ['global', 'workspace']);
+    assert.deepEqual(writePreference('global', false), ['global']);
+    assert.deepEqual(writePreference('workspace', true), ['workspace', 'global']);
+    // No folder open → workspace isn't a real target; fall through to global.
+    assert.deepEqual(writePreference('workspace', false), ['global']);
   });
 });
 
