@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   check:
-    name: check (types · lint · build)
+    name: check (types · lint · build · test)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +24,9 @@ jobs:
           node-version: "22"
           cache: npm
       # npm ci installs the committed lockfile exactly; `compile` runs
-      # tsc --noEmit + eslint + the esbuild bundle. The @vscode/test-electron
-      # suite needs a headless VS Code (xvfb) and is left out of the oracle.
+      # tsc --noEmit + eslint + the esbuild bundle. `test` runs the node:test
+      # suite (no VS Code, no network). The @vscode/test-electron suite needs a
+      # headless VS Code (xvfb) and is left out of the oracle.
       - run: npm ci
       - run: npm run compile
+      - run: npm test
