@@ -36,6 +36,7 @@ import { parseLine, renderParseError } from '../protocol/streamingParser';
 import {
   type CancellationSignal,
   type Capabilities,
+  type ConfigError,
   isProviderError,
   type KeepOrReset,
   type Millis,
@@ -55,7 +56,11 @@ import { markShown, neverShown, progressPercent, shouldShowMessage } from './pro
 import { type ProvisionError, provisionApiKey, renderProvisionError } from './provisionApiKey';
 import { curatedSuggestions } from './suggestions';
 
+// Tolerance for malformed *model output* (a parse-quality signal).
 const MAX_RECOVERABLE_ERRORS = 5;
+// Tolerance for *settings-write* failures (an environment/permissions signal,
+// kept separate so an IO problem isn't misreported as bad model output).
+const MAX_WRITE_ERRORS = 5;
 const DEFAULT_EXPECTED_SETTINGS = 120;
 const INITIAL_MESSAGE = '🤖 AI analyzing your vibe...';
 const PROGRESS_TITLE = 'Vibe Themer';
@@ -73,6 +78,7 @@ export type GenerationError =
   | { readonly _tag: 'Prompt'; readonly error: PromptError }
   | { readonly _tag: 'Provider'; readonly error: ProviderError }
   | { readonly _tag: 'StreamInterrupted'; readonly applied: number; readonly error: ProviderError }
+  | { readonly _tag: 'WriteAborted'; readonly applied: number; readonly error: ConfigError }
   | { readonly _tag: 'Aborted'; readonly applied: number; readonly lastError: string };
 
 type ApplyStatus = 'ok' | 'error';
@@ -81,6 +87,7 @@ type ConsumeOutcome =
   | { readonly _tag: 'Completed'; readonly applied: number }
   | { readonly _tag: 'Cancelled'; readonly applied: number }
   | { readonly _tag: 'StreamFailed'; readonly applied: number; readonly error: ProviderError }
+  | { readonly _tag: 'WriteFailed'; readonly applied: number; readonly error: ConfigError }
   | { readonly _tag: 'Aborted'; readonly applied: number; readonly lastError: string };
 
 // ── The streaming consume loop ─────────────────────────────────────────────────
@@ -95,8 +102,10 @@ const consumeStream = async (
   let buffer = '';
   let applied = 0;
   let expected = DEFAULT_EXPECTED_SETTINGS;
-  let errors = 0;
-  let lastError = '';
+  let parseErrors = 0;
+  let writeErrors = 0;
+  let lastParseError = '';
+  let lastConfigError: ConfigError | undefined;
   let currentMessage = INITIAL_MESSAGE;
   let lastMessageAt = neverShown;
 
@@ -110,7 +119,11 @@ const consumeStream = async (
       reportProgress();
       return 'ok';
     }
-    lastError = renderConfigError(result.error).title;
+    // A write failure is environmental, not a model-output problem — track it on
+    // its own budget and log it, rather than spending the malformed-line tolerance.
+    writeErrors += 1;
+    lastConfigError = result.error;
+    caps.logger.debug('apply setting failed', { error: renderConfigError(result.error).title });
     return 'error';
   };
 
@@ -143,16 +156,20 @@ const consumeStream = async (
     }
     const parsed = parseLine(line);
     if (parsed._tag === 'Ok') {
-      const status = await applyDirective(parsed.value);
-      if (status === 'error') {
-        errors += 1;
-      }
+      // Write failures are counted inside applySetting, on their own budget.
+      await applyDirective(parsed.value);
     } else {
-      errors += 1;
-      lastError = renderParseError(parsed.error);
-      caps.logger.debug('directive parse failed', { line, error: lastError });
+      parseErrors += 1;
+      lastParseError = renderParseError(parsed.error);
+      caps.logger.debug('directive parse failed', { line, error: lastParseError });
     }
-    return errors >= MAX_RECOVERABLE_ERRORS ? { _tag: 'Aborted', applied, lastError } : null;
+    if (parseErrors >= MAX_RECOVERABLE_ERRORS) {
+      return { _tag: 'Aborted', applied, lastError: lastParseError };
+    }
+    if (writeErrors >= MAX_WRITE_ERRORS && lastConfigError !== undefined) {
+      return { _tag: 'WriteFailed', applied, error: lastConfigError };
+    }
+    return null;
   };
 
   try {
@@ -206,6 +223,9 @@ const finalize = (
 
     StreamFailed: ({ applied, error }): AsyncResultType<GenerationError, GenerationOutcome> =>
       Promise.resolve(err({ _tag: 'StreamInterrupted', applied, error })),
+
+    WriteFailed: ({ applied, error }): AsyncResultType<GenerationError, GenerationOutcome> =>
+      Promise.resolve(err({ _tag: 'WriteAborted', applied, error })),
 
     Completed: async ({ applied }): AsyncResultType<GenerationError, GenerationOutcome> => {
       const choice = await caps.ui.announceCompletion({
@@ -308,6 +328,13 @@ export const renderGenerationError = (e: GenerationError): Option.Option<UserMes
         userMessage(renderProviderError(error).title, {
           detail: `Generation stopped after applying ${applied} settings.`,
           suggestion: 'Try again, or run "Reset Theme Customizations" to start fresh.',
+        }),
+      ),
+    WriteAborted: ({ applied, error }) =>
+      some(
+        userMessage(renderConfigError(error).title, {
+          detail: `Stopped after applying ${applied} settings — the editor kept refusing writes.`,
+          suggestion: 'Check VS Code permissions and try restarting the editor.',
         }),
       ),
     Aborted: ({ applied, lastError }) =>
