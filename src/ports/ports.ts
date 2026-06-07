@@ -1,7 +1,8 @@
 /**
  * The ports: every interaction with the outside world, as an interface. The
  * application layer depends only on these, so it is fully exercisable with in-memory
- * fakes (see the tests). VS Code and the OpenAI SDK appear only in `adapters/`.
+ * fakes (see the tests). VS Code, the OpenAI SDK, and the Anthropic SDK appear only
+ * in `adapters/`.
  */
 
 import {
@@ -14,13 +15,14 @@ import {
 } from '../fp';
 import { type ApiKey } from '../domain/apiKey';
 import { type Coverage } from '../domain/coverage';
-import { type ModelId } from '../domain/model';
+import { type Model, type ModelId, type SupportedModel } from '../domain/model';
+import { type Provider } from '../domain/provider';
 import { type WriteTarget } from '../domain/scope';
 import { type CurrentTheme, type ThemeSetting } from '../domain/theme';
 import { type Vibe } from '../domain/vibe';
 import {
   type ConfigError,
-  type OpenAiError,
+  type ProviderError,
   type PromptError,
   type Severity,
   type StorageError,
@@ -41,29 +43,50 @@ export interface Logger {
   readonly error: (message: string, data?: Readonly<Record<string, unknown>>) => void;
 }
 
+/** One key per provider, in VS Code's encrypted storage. */
 export interface SecretStore {
-  readonly get: () => AsyncResultType<StorageError, OptionType<string>>;
-  readonly set: (key: Redacted<ApiKey>) => AsyncResultType<StorageError, void>;
-  readonly clear: () => AsyncResultType<StorageError, void>;
+  readonly get: (provider: Provider) => AsyncResultType<StorageError, OptionType<string>>;
+  readonly set: (
+    provider: Provider,
+    key: Redacted<ApiKey>,
+  ) => AsyncResultType<StorageError, void>;
+  /** Clear every provider's key (the "Clear API Keys" command). */
+  readonly clearAll: () => AsyncResultType<StorageError, void>;
 }
 
-export interface GenerationRequest {
+// ── Model gateway ───────────────────────────────────────────────────────────────
+
+/** What a single provider's adapter is asked to do — it already knows its provider. */
+export interface ProviderRequest {
   readonly key: Redacted<ApiKey>;
   readonly model: ModelId;
   readonly system: NonEmptyString;
   readonly user: NonEmptyString;
 }
 
-export interface OpenAiGateway {
+/** One provider's concrete capabilities. Adapters in `adapters/{openai,anthropic}`. */
+export interface ProviderAdapter {
   /** Prove a key works (used after the user enters one). */
-  readonly verify: (key: Redacted<ApiKey>) => AsyncResultType<OpenAiError, void>;
-  readonly listGptModels: (
-    key: Redacted<ApiKey>,
-  ) => AsyncResultType<OpenAiError, NonEmptyArray<ModelId>>;
+  readonly verify: (key: Redacted<ApiKey>) => AsyncResultType<ProviderError, void>;
   /** Open a streamed completion; the iterable yields raw content deltas. */
   readonly streamTheme: (
+    request: ProviderRequest,
+  ) => AsyncResultType<ProviderError, AsyncIterable<string>>;
+}
+
+export interface GenerationRequest extends ProviderRequest {
+  readonly provider: Provider;
+}
+
+/** Provider-agnostic façade the application talks to; dispatches by provider. */
+export interface ModelGateway {
+  readonly verify: (
+    provider: Provider,
+    key: Redacted<ApiKey>,
+  ) => AsyncResultType<ProviderError, void>;
+  readonly streamTheme: (
     request: GenerationRequest,
-  ) => AsyncResultType<OpenAiError, AsyncIterable<string>>;
+  ) => AsyncResultType<ProviderError, AsyncIterable<string>>;
 }
 
 export interface ConfigStore {
@@ -83,8 +106,8 @@ export interface PromptLibrary {
 
 /** Persisted, non-secret preferences (backed by VS Code `globalState`). */
 export interface Preferences {
-  readonly selectedModel: () => OptionType<ModelId>;
-  readonly selectModel: (model: ModelId) => Promise<void>;
+  readonly selectedModel: () => OptionType<Model>;
+  readonly selectModel: (model: Model) => Promise<void>;
   readonly clearModel: () => Promise<void>;
 }
 
@@ -119,13 +142,15 @@ export interface Ui {
   readonly pickVibe: (
     suggestions: ReadonlyArray<Suggestion>,
   ) => AsyncResultType<UiError, OptionType<Vibe>>;
-  /** Input box for the API key; returns the raw string, `None` on cancel. */
-  readonly promptForApiKey: () => AsyncResultType<UiError, OptionType<string>>;
-  /** Pick from a non-empty model list, `None` on cancel. */
+  /** Input box for a provider's API key; returns the raw string, `None` on cancel. */
+  readonly promptForApiKey: (
+    provider: Provider,
+  ) => AsyncResultType<UiError, OptionType<string>>;
+  /** Pick from the curated catalog (or enter a custom provider+id), `None` on cancel. */
   readonly pickModel: (
-    models: NonEmptyArray<ModelId>,
-    current: OptionType<ModelId>,
-  ) => AsyncResultType<UiError, OptionType<ModelId>>;
+    catalog: ReadonlyArray<SupportedModel>,
+    current: OptionType<Model>,
+  ) => AsyncResultType<UiError, OptionType<Model>>;
   /** Run a long task inside a cancellable progress notification. */
   readonly runWithProgress: <A>(
     title: string,

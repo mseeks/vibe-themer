@@ -1,23 +1,15 @@
 /**
  * In-memory fakes for every port, assembled into `Capabilities`. Because the whole
  * application core depends only on ports, this lets us drive the full Change Theme
- * flow — streaming, live application, cancellation, error tolerance — with no VS
- * Code and no network, and then inspect exactly what happened.
+ * flow — streaming, live application, cancellation, error tolerance, and now
+ * multi-provider routing — with no VS Code and no network, then inspect what happened.
  */
 
-import {
-  expose,
-  none,
-  type NonEmptyArray,
-  type NonEmptyString,
-  type OptionType,
-  ok,
-  Option,
-  some,
-} from '../../src/fp';
+import { expose, none, type NonEmptyString, type OptionType, ok, Option, some } from '../../src/fp';
 import { toApplication } from '../../src/domain/color';
 import { fontStyleText } from '../../src/domain/fontStyle';
-import { type ModelId } from '../../src/domain/model';
+import { type Model } from '../../src/domain/model';
+import { type Provider } from '../../src/domain/provider';
 import { selectorText } from '../../src/domain/selector';
 import { type CurrentTheme, type ThemeSetting } from '../../src/domain/theme';
 import { tokenScopeText } from '../../src/domain/tokenScope';
@@ -26,16 +18,19 @@ import {
   type Capabilities,
   type KeepOrReset,
   type Millis,
-  type OpenAiError,
+  type ProviderError,
   type Severity,
 } from '../../src/ports';
 
 export interface HarnessOptions {
+  /** Pre-stored key, kept under the selected model's provider (default OpenAI). */
   readonly storedKey?: string;
   readonly promptKey?: string;
   readonly vibe?: string;
+  /** Override the chosen model; defaults to none → the app uses DEFAULT_MODEL. */
+  readonly selectedModel?: Model;
   readonly streamText?: string;
-  readonly streamError?: OpenAiError;
+  readonly streamError?: ProviderError;
   readonly chunkSize?: number;
   readonly cancelAfterReports?: number;
   readonly cancellationChoice?: KeepOrReset;
@@ -52,6 +47,7 @@ export interface TokenRule {
 export interface Captured {
   readonly logs: Array<{ level: string; message: string; data?: Readonly<Record<string, unknown>> }>;
   readonly notifications: Array<{ severity: Severity; title: string }>;
+  readonly keySetProviders: Provider[];
   keySet: boolean;
   keyCleared: boolean;
   resets: number;
@@ -90,14 +86,20 @@ export const harness = (options: HarnessOptions = {}): Harness => {
   const captured: Captured = {
     logs: [],
     notifications: [],
+    keySetProviders: [],
     keySet: false,
     keyCleared: false,
     resets: 0,
     streamUserPrompt: '',
   };
 
-  let storedKey = options.storedKey;
-  let selectedModel: OptionType<ModelId> = none;
+  const activeProvider: Provider = options.selectedModel?.provider ?? 'openai';
+  const keys = new Map<Provider, string>();
+  if (options.storedKey !== undefined) {
+    keys.set(activeProvider, options.storedKey);
+  }
+  let selectedModel: OptionType<Model> =
+    options.selectedModel !== undefined ? some(options.selectedModel) : none;
   let clockValue = 0;
 
   const applyToState = (setting: ThemeSetting): void => {
@@ -132,25 +134,22 @@ export const harness = (options: HarnessOptions = {}): Harness => {
 
   const caps: Capabilities = {
     secrets: {
-      get: async () => ok(Option.fromNullable(storedKey)),
-      set: async (key) => {
-        storedKey = expose(key);
+      get: async (provider) => ok(Option.fromNullable(keys.get(provider))),
+      set: async (provider, key) => {
+        keys.set(provider, expose(key));
         captured.keySet = true;
+        captured.keySetProviders.push(provider);
         return ok(undefined);
       },
-      clear: async () => {
-        storedKey = undefined;
+      clearAll: async () => {
+        keys.clear();
         captured.keyCleared = true;
         return ok(undefined);
       },
     },
 
-    openai: {
+    gateway: {
       verify: async () => ok(undefined),
-      listGptModels: async () => {
-        const models: NonEmptyArray<ModelId> = ['gpt-4.1' as ModelId];
-        return ok(models);
-      },
       streamTheme: async (request) => {
         captured.streamUserPrompt = request.user;
         return options.streamError !== undefined
@@ -196,7 +195,7 @@ export const harness = (options: HarnessOptions = {}): Harness => {
         const parsed = parseVibe(options.vibe);
         return ok(parsed._tag === 'Ok' ? some(parsed.value) : none);
       },
-      promptForApiKey: async () => ok(Option.fromNullable(options.promptKey)),
+      promptForApiKey: async (_provider) => ok(Option.fromNullable(options.promptKey)),
       pickModel: async () => ok(none),
       runWithProgress: async (_title, task) => {
         let reports = 0;

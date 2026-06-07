@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateTheme } from '../src/application/generateTheme';
+import { makeModel } from '../src/domain/model';
 import { harness } from './support/harness';
 
 const VALID_KEY = `sk-${'x'.repeat(40)}`;
@@ -65,6 +66,24 @@ describe('generateTheme — happy path', () => {
       assert.equal(result.value._tag, 'Completed');
     }
   });
+
+  it('routes to Anthropic when a Claude model is selected, storing an sk-ant- key', async () => {
+    const anthropicKey = `sk-ant-${'x'.repeat(40)}`;
+    const text = ['COUNT:1', 'SELECTOR:editor.background=#101010', ''].join('\n');
+    const h = harness({
+      selectedModel: makeModel('anthropic', 'claude-sonnet-4-6'),
+      promptKey: anthropicKey,
+      vibe: 'calm ocean depths',
+      streamText: text,
+    });
+    const result = await generateTheme(h.caps);
+
+    assert.deepEqual(h.captured.keySetProviders, ['anthropic']);
+    assert.equal(h.colors.get('editor.background'), '#101010');
+    if (result._tag === 'Ok') {
+      assert.equal(result.value._tag, 'Completed');
+    }
+  });
 });
 
 describe('generateTheme — benign exits', () => {
@@ -80,11 +99,11 @@ describe('generateTheme — benign exits', () => {
 });
 
 describe('generateTheme — failures', () => {
-  it('surfaces an OpenAI stream error', async () => {
+  it('surfaces a provider stream error', async () => {
     const h = harness({ storedKey: VALID_KEY, vibe: 'cozy', streamError: { _tag: 'RateLimited' } });
     assert.deepEqual(await generateTheme(h.caps), {
       _tag: 'Err',
-      error: { _tag: 'OpenAi', error: { _tag: 'RateLimited' } },
+      error: { _tag: 'Provider', error: { _tag: 'RateLimited' } },
     });
   });
 
