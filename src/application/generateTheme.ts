@@ -28,7 +28,8 @@ import {
 import { type ApiKey } from '../domain/apiKey';
 import { coverage } from '../domain/coverage';
 import { type StreamingDirective } from '../domain/directive';
-import { DEFAULT_MODEL, type Model } from '../domain/model';
+import { DEFAULT_MODEL, type Model, modelText } from '../domain/model';
+import { type Provider, providerInfo } from '../domain/provider';
 import { type WriteTarget, writePreference } from '../domain/scope';
 import { type ThemeSetting } from '../domain/theme';
 import { type Vibe } from '../domain/vibe';
@@ -76,8 +77,13 @@ export type GenerationError =
   | { readonly _tag: 'Provision'; readonly error: ProvisionError }
   | { readonly _tag: 'Ui'; readonly error: UiError }
   | { readonly _tag: 'Prompt'; readonly error: PromptError }
-  | { readonly _tag: 'Provider'; readonly error: ProviderError }
-  | { readonly _tag: 'StreamInterrupted'; readonly applied: number; readonly error: ProviderError }
+  | { readonly _tag: 'Provider'; readonly error: ProviderError; readonly provider: Provider }
+  | {
+      readonly _tag: 'StreamInterrupted';
+      readonly applied: number;
+      readonly error: ProviderError;
+      readonly provider: Provider;
+    }
   | { readonly _tag: 'WriteAborted'; readonly applied: number; readonly error: ConfigError }
   | { readonly _tag: 'Aborted'; readonly applied: number; readonly lastError: string };
 
@@ -216,13 +222,14 @@ const decideKeepOrReset = (result: ResultType<UiError, KeepOrReset>): KeepOrRese
 const finalize = (
   caps: Capabilities,
   consumed: ConsumeOutcome,
+  provider: Provider,
 ): AsyncResultType<GenerationError, GenerationOutcome> =>
   matchTag(consumed, {
     Aborted: ({ applied, lastError }): AsyncResultType<GenerationError, GenerationOutcome> =>
       Promise.resolve(err({ _tag: 'Aborted', applied, lastError })),
 
     StreamFailed: ({ applied, error }): AsyncResultType<GenerationError, GenerationOutcome> =>
-      Promise.resolve(err({ _tag: 'StreamInterrupted', applied, error })),
+      Promise.resolve(err({ _tag: 'StreamInterrupted', applied, error, provider })),
 
     WriteFailed: ({ applied, error }): AsyncResultType<GenerationError, GenerationOutcome> =>
       Promise.resolve(err({ _tag: 'WriteAborted', applied, error })),
@@ -278,7 +285,7 @@ const runGeneration = async (
     user,
   });
   if (streamResult._tag === 'Err') {
-    return err({ _tag: 'Provider', error: streamResult.error });
+    return err({ _tag: 'Provider', error: streamResult.error, provider: model.provider });
   }
 
   const consumed = await caps.ui.runWithProgress(PROGRESS_TITLE, (reporter, signal) => {
@@ -286,27 +293,31 @@ const runGeneration = async (
     return consumeStream(caps, streamResult.value, reporter, signal, preference);
   });
 
-  return finalize(caps, consumed);
+  return finalize(caps, consumed, model.provider);
 };
 
 export const generateTheme = async (
   caps: Capabilities,
 ): AsyncResultType<GenerationError, GenerationOutcome> => {
   const model = Option.getOrElse(() => DEFAULT_MODEL)(caps.preferences.selectedModel());
+  const modelLabel = `${providerInfo(model.provider).displayName} · ${modelText(model.id)}`;
+
+  // Ask for the vibe first: the user commits to an action (and sees the active
+  // model) before being asked for a credential. Provisioning the key — which does a
+  // verify round-trip — only happens once there's a vibe to act on.
+  const vibeResult = await caps.ui.pickVibe(curatedSuggestions, modelLabel);
+  if (vibeResult._tag === 'Err') {
+    return err({ _tag: 'Ui', error: vibeResult.error });
+  }
+  if (vibeResult.value._tag === 'None') {
+    return ok({ _tag: 'NoVibe' });
+  }
 
   const keyResult = await provisionApiKey(caps, model.provider);
   if (keyResult._tag === 'Err') {
     return keyResult.error._tag === 'Cancelled'
       ? ok({ _tag: 'NoKey' })
       : err({ _tag: 'Provision', error: keyResult.error });
-  }
-
-  const vibeResult = await caps.ui.pickVibe(curatedSuggestions);
-  if (vibeResult._tag === 'Err') {
-    return err({ _tag: 'Ui', error: vibeResult.error });
-  }
-  if (vibeResult.value._tag === 'None') {
-    return ok({ _tag: 'NoVibe' });
   }
 
   const promptResult = await caps.prompts.systemPrompt();
@@ -322,10 +333,10 @@ export const renderGenerationError = (e: GenerationError): Option.Option<UserMes
     Provision: ({ error }) => renderProvisionError(error),
     Ui: ({ error }) => some(renderUiError(error)),
     Prompt: ({ error }) => some(renderPromptError(error)),
-    Provider: ({ error }) => some(renderProviderError(error)),
-    StreamInterrupted: ({ applied, error }) =>
+    Provider: ({ error, provider }) => some(renderProviderError(error, provider)),
+    StreamInterrupted: ({ applied, error, provider }) =>
       some(
-        userMessage(renderProviderError(error).title, {
+        userMessage(renderProviderError(error, provider).title, {
           detail: `Generation stopped after applying ${applied} settings.`,
           suggestion: 'Try again, or run "Reset Theme Customizations" to start fresh.',
         }),

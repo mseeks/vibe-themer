@@ -67,11 +67,12 @@ const pickCustomModel = async (): Promise<OptionType<Model>> => {
 };
 
 export const createUi = (): Ui => ({
-  pickVibe: (suggestions: ReadonlyArray<Suggestion>) =>
+  pickVibe: (suggestions: ReadonlyArray<Suggestion>, currentModel: string) =>
     new Promise((resolve) => {
       const quickPick = vscode.window.createQuickPick();
-      quickPick.title = '🎨 Create New Theme or Modify Current Theme';
-      quickPick.placeholder = '✨ Describe any vibe or mood… (modifying needs an existing vibe theme)';
+      quickPick.title = `🎨 Create or Modify Theme · ${currentModel}`;
+      quickPick.placeholder =
+        '✨ Describe any vibe or mood… (model is set via "Select Model"; modifying needs an existing vibe theme)';
 
       const sampled = shuffle(suggestions).slice(0, 6);
       const baseItems: vscode.QuickPickItem[] = sampled.map((s) => ({ label: s.label }));

@@ -6,6 +6,7 @@
  */
 
 import { matchTag, none, type OptionType, some } from '../fp';
+import { type Provider, providerInfo } from '../domain/provider';
 import { type WriteTarget } from '../domain/scope';
 
 export type Severity = 'info' | 'warning' | 'error';
@@ -67,23 +68,27 @@ export type UiError = { readonly _tag: 'UiFailure' };
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
 
-export const renderProviderError = (e: ProviderError): UserMessage =>
-  matchTag(e, {
+// `provider`, when known, names which vendor failed — keys are stored per provider,
+// so "Anthropic rejected the API key" is actionable where "the provider" is not.
+export const renderProviderError = (e: ProviderError, provider?: Provider): UserMessage => {
+  const name = provider !== undefined ? providerInfo(provider).displayName : undefined;
+  return matchTag(e, {
     AuthFailed: () =>
-      userMessage('🔑 The provider rejected the API key', {
-        suggestion: 'Clear the key and enter a valid one, then check your account access.',
+      userMessage(`🔑 ${name ?? 'The provider'} rejected the API key`, {
+        suggestion: 'Run "Clear API Keys", then enter a valid key and check your account access.',
       }),
     RateLimited: () =>
-      userMessage('🔑 Provider rate limit or quota reached', {
+      userMessage(`🔑 ${name ?? 'Provider'} rate limit or quota reached`, {
         suggestion: 'Check your plan and usage on the provider dashboard, then try again.',
       }),
     Network: () =>
-      userMessage('🌐 Could not reach the model provider', {
+      userMessage(`🌐 Could not reach ${name ?? 'the model provider'}`, {
         suggestion: 'Check your internet connection and try again.',
       }),
     Unexpected: ({ detail }) =>
       userMessage('❌ The model request failed', { detail, suggestion: 'Please try again.' }),
   });
+};
 
 export const renderPromptError = (e: PromptError): UserMessage =>
   matchTag(e, {

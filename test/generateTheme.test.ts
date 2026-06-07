@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { generateTheme } from '../src/application/generateTheme';
+import { generateTheme, renderGenerationError } from '../src/application/generateTheme';
 import { makeModel } from '../src/domain/model';
 import { harness } from './support/harness';
 
@@ -95,6 +95,14 @@ describe('generateTheme — benign exits', () => {
     assert.deepEqual(await generateTheme(h.caps), { _tag: 'Ok', value: { _tag: 'NoVibe' } });
   });
 
+  it('asks for the vibe before the API key', async () => {
+    // No key and no vibe: dismissing the vibe picker yields NoVibe, which proves the
+    // vibe step runs before key provisioning (it would otherwise be NoKey).
+    const h = harness({});
+    assert.deepEqual(await generateTheme(h.caps), { _tag: 'Ok', value: { _tag: 'NoVibe' } });
+    assert.equal(h.captured.keySet, false);
+  });
+
   it('returns NoKey when no key is stored and the prompt is dismissed', async () => {
     const h = harness({ vibe: 'cozy autumn' });
     assert.deepEqual(await generateTheme(h.caps), { _tag: 'Ok', value: { _tag: 'NoKey' } });
@@ -106,8 +114,26 @@ describe('generateTheme — failures', () => {
     const h = harness({ storedKey: VALID_KEY, vibe: 'cozy', streamError: { _tag: 'RateLimited' } });
     assert.deepEqual(await generateTheme(h.caps), {
       _tag: 'Err',
-      error: { _tag: 'Provider', error: { _tag: 'RateLimited' } },
+      error: { _tag: 'Provider', error: { _tag: 'RateLimited' }, provider: 'openai' },
     });
+  });
+
+  it('names the provider in the rendered error (multi-provider)', async () => {
+    const h = harness({
+      selectedModel: makeModel('anthropic', 'claude-sonnet-4-6'),
+      storedKey: `sk-ant-${'x'.repeat(40)}`,
+      vibe: 'cozy',
+      streamError: { _tag: 'AuthFailed' },
+    });
+    const result = await generateTheme(h.caps);
+    assert.equal(result._tag, 'Err');
+    if (result._tag === 'Err') {
+      const msg = renderGenerationError(result.error);
+      assert.equal(msg._tag, 'Some');
+      if (msg._tag === 'Some') {
+        assert.ok(msg.value.title.includes('Anthropic'), msg.value.title);
+      }
+    }
   });
 
   it('surfaces a mid-stream provider error and keeps the partial theme', async () => {
