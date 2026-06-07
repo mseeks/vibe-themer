@@ -44,11 +44,14 @@ describe('isReasoningModel (OpenAI reasoning_effort gate)', () => {
 });
 
 describe('reasoningParams', () => {
-  it("sends reasoning_effort 'low' for reasoning models, omits it otherwise", () => {
-    // 'low' is valid on both the gpt-5/o-series (minimal/low/…) and gpt-5.1+
-    // (none/low/…/xhigh) scales — 'minimal' 400s on gpt-5.5, so must not be used.
-    for (const id of ['gpt-5.5', 'gpt-5.4-mini', 'o4-mini']) {
-      assert.deepEqual(reasoningParams(id), { reasoning_effort: 'low' }, id);
+  it("sends 'none' for gpt-5.1+, 'minimal' for older gpt-5/o-series, nothing otherwise", () => {
+    // The scale flipped at gpt-5.1: 'none' 400s on older models, 'minimal' 400s on
+    // gpt-5.1+. Each must get the no-reasoning value it actually accepts.
+    for (const id of ['gpt-5.5', 'gpt-5.4-mini', 'GPT-5.2']) {
+      assert.deepEqual(reasoningParams(id), { reasoning_effort: 'none' }, id);
+    }
+    for (const id of ['gpt-5', 'gpt-5-mini', 'o3', 'o4-mini']) {
+      assert.deepEqual(reasoningParams(id), { reasoning_effort: 'minimal' }, id);
     }
     for (const id of ['gpt-4o', 'gpt-4.1']) {
       assert.deepEqual(reasoningParams(id), {}, id);
