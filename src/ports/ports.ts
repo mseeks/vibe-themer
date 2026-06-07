@@ -140,9 +140,14 @@ export interface CompletionSummary {
 }
 
 export interface Ui {
-  /** QuickPick seeded with suggestions; validates input to a `Vibe`, `None` on cancel. */
+  /**
+   * QuickPick seeded with suggestions; validates input to a `Vibe`, `None` on
+   * cancel. `currentModel` is shown so the active model is visible (and its
+   * existence discoverable) without leaving the flow.
+   */
   readonly pickVibe: (
     suggestions: ReadonlyArray<Suggestion>,
+    currentModel: string,
   ) => AsyncResultType<UiError, OptionType<Vibe>>;
   /** Input box for a provider's API key; returns the raw string, `None` on cancel. */
   readonly promptForApiKey: (

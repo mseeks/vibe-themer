@@ -28,7 +28,7 @@ export type ProvisionError =
   | { readonly _tag: 'Cancelled' }
   | { readonly _tag: 'InvalidKeyFormat'; readonly error: ApiKeyError }
   | { readonly _tag: 'Storage'; readonly error: StorageError }
-  | { readonly _tag: 'Provider'; readonly error: ProviderError }
+  | { readonly _tag: 'Provider'; readonly error: ProviderError; readonly provider: Provider }
   | { readonly _tag: 'Ui'; readonly error: UiError };
 
 type ProvisionDeps = Pick<Capabilities, 'secrets' | 'gateway' | 'ui'>;
@@ -53,7 +53,7 @@ const promptAndStore = async (
 
   const verified = await caps.gateway.verify(provider, key);
   if (verified._tag === 'Err') {
-    return err({ _tag: 'Provider', error: verified.error });
+    return err({ _tag: 'Provider', error: verified.error, provider });
   }
 
   const saved = await caps.secrets.set(provider, key);
@@ -94,5 +94,5 @@ export const renderProvisionError = (e: ProvisionError): OptionType<UserMessage>
         }),
       ),
     Storage: ({ error }) => some(renderStorageError(error)),
-    Provider: ({ error }) => some(renderProviderError(error)),
+    Provider: ({ error, provider }) => some(renderProviderError(error, provider)),
   });

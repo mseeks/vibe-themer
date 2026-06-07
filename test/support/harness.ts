@@ -232,7 +232,7 @@ export const harness = (options: HarnessOptions = {}): Harness => {
     },
 
     ui: {
-      pickVibe: async () => {
+      pickVibe: async (_suggestions, _currentModel) => {
         if (options.vibe === undefined) {
           return ok(none);
         }
