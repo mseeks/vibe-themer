@@ -1,7 +1,8 @@
 # Vibe Themer Architecture (v2)
 
 Vibe Themer turns a natural-language "vibe" into a VS Code color theme, streaming
-each setting from the OpenAI API and applying it live. v2 is a ground-up rewrite
+each setting from the configured model provider (OpenAI or Anthropic) and applying
+it live. v2 is a ground-up rewrite
 around a **functional core, imperative shell** (hexagonal / ports-and-adapters)
 design with strict, domain-driven typing.
 
@@ -18,7 +19,7 @@ the clock) live behind interfaces and are swapped for fakes in tests.
         └───────────────┬───────────────┬──────────────┘
                         │               │
                  adapters/         application/         ← orchestration (impure-ish)
-            (vscode, openai)       use cases             returns Result, no throws
+          (vscode, providers)      use cases             returns Result, no throws
                         │               │
                         └──────┬────────┘
                                │ depends only on
@@ -28,8 +29,9 @@ the clock) live behind interfaces and are swapped for fakes in tests.
 ```
 
 Dependencies point inward. `domain`, `protocol`, and `fp` know nothing about VS
-Code or OpenAI. `application` depends on `ports` (interfaces), never on adapters.
-`adapters` and `extension.ts` are the only files that import `vscode` or `openai`.
+Code or the model SDKs. `application` depends on `ports` (interfaces), never on
+adapters. `adapters` and `extension.ts` are the only files that import `vscode`,
+`openai`, or `@anthropic-ai/sdk`.
 
 ## Layers
 
@@ -45,7 +47,8 @@ and a tiny parser-combinator set. One import surface: `import { ... } from './fp
 Every domain value has a **smart constructor** and no other way in, so possession
 of the value is proof it's valid: `Vibe`, `ColorValue` (Hex | Named | Remove),
 `WorkbenchSelector`, `TokenScope`, `FontStyle`, `ApiKey` (wrapped in `Redacted`),
-`ModelId`, `StreamingDirective`, `ThemeSetting`, `ConfigurationScope`,
+`Provider`, `Model` (`{provider, id}`), `StreamingDirective`, `ThemeSetting`,
+`ConfigurationScope`,
 `CurrentTheme`, `Coverage`. Errors are tagged unions with centralized rendering.
 
 ### `protocol/` — the streaming grammar
@@ -56,10 +59,10 @@ field validation. A parsed directive is fully well-typed.
 
 ### `ports/` — the seam
 
-Interfaces for every effect: `OpenAiGateway`, `ConfigStore`, `SecretStore`,
-`Preferences`, `PromptLibrary`, `Ui`, `Clock`, `Logger`, bundled into one
-`Capabilities` record. Plus the port-error unions and their `UserMessage`
-rendering.
+Interfaces for every effect: `ModelGateway` (the provider-blind façade),
+`ConfigStore`, `SecretStore`, `Preferences`, `PromptLibrary`, `Ui`, `Clock`,
+`Logger`, bundled into one `Capabilities` record. Plus the port-error unions and
+their `UserMessage` rendering.
 
 ### `application/` — use cases
 
@@ -71,9 +74,11 @@ go through ports.
 
 ### `adapters/` — the shell
 
-`adapters/vscode/*` implement the ports against the VS Code API;
-`adapters/openai/gateway.ts` implements `OpenAiGateway` against the OpenAI SDK,
-classifying errors by HTTP status. Thin and obviously correct.
+`adapters/vscode/*` implement the ports against the VS Code API.
+`adapters/openai/` and `adapters/anthropic/` each implement a `ProviderAdapter`
+against their SDK, classifying errors by HTTP status; `adapters/gateway.ts` is the
+provider-blind `ModelGateway` that dispatches each call to the right one. Thin and
+obviously correct.
 
 ### `commands.ts` + `extension.ts`
 
@@ -95,8 +100,10 @@ synchronous activation.
 
 ## Configuration & secrets
 
-- API key: VS Code `SecretStorage`, wrapped in `Redacted` from validation onward.
-- Selected model: `globalState` via the `Preferences` port (default `gpt-4.1`).
+- API keys: one per provider in VS Code `SecretStorage`, wrapped in `Redacted`
+  from validation onward.
+- Selected model: a `Model` (`{provider, id}`) in `globalState` via the
+  `Preferences` port (default `gpt-5.5` on OpenAI), chosen from a curated catalog.
 - Theme state: read per-scope via `config.inspect()` so global vs workspace are
   actually distinguished.
 
