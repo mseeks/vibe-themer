@@ -5,8 +5,11 @@ import { modelText } from '../../domain/model';
 import { type ProviderAdapter, type ProviderError, type ProviderRequest } from '../../ports';
 import { classifyByStatus } from '../classify';
 
-// The theme protocol is short (~120 one-line settings); this is generous headroom.
-const MAX_TOKENS = 16000;
+// A comprehensive theme covers the full selector + token-scope catalog (hundreds of
+// one-line SELECTOR/TOKEN directives, plus interspersed MESSAGE lines), so the cap is
+// sized for that worst case with headroom — not the ~120 a typical theme emits. (The
+// OpenAI adapter sets no cap; Chat Completions defaults to the model maximum.)
+const MAX_TOKENS = 32000;
 
 const classify = (e: unknown): ProviderError =>
   e instanceof Anthropic.APIError ? classifyByStatus(e.status, e.message) : { _tag: 'Network' };
