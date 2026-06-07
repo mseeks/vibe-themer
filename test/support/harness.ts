@@ -11,6 +11,7 @@ import { fontStyleText } from '../../src/domain/fontStyle';
 import { type Model, modelText } from '../../src/domain/model';
 import { type Provider } from '../../src/domain/provider';
 import { selectorText } from '../../src/domain/selector';
+import { type WriteTarget } from '../../src/domain/scope';
 import { type CurrentTheme, type ThemeSetting } from '../../src/domain/theme';
 import { tokenScopeText } from '../../src/domain/tokenScope';
 import { parseVibe } from '../../src/domain/vibe';
@@ -43,6 +44,7 @@ export interface HarnessOptions {
   readonly currentTheme?: CurrentTheme;
   /** Make every settings write fail (simulates an unwritable settings.json). */
   readonly failApply?: boolean;
+  readonly applyTo?: WriteTarget;
 }
 
 export interface TokenRule {
@@ -199,6 +201,7 @@ export const harness = (options: HarnessOptions = {}): Harness => {
     config: {
       readCurrentTheme: () => options.currentTheme ?? emptyTheme,
       hasWorkspaceFolders: () => options.workspaceFolders ?? false,
+      applyTo: () => options.applyTo ?? 'global',
       applySetting: async (setting, _preference) => {
         if (options.failApply === true) {
           return { _tag: 'Err', error: { _tag: 'AllTargetsFailed' } };

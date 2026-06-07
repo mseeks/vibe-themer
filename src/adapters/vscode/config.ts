@@ -75,6 +75,11 @@ export const createConfigStore = (): ConfigStore => ({
 
   hasWorkspaceFolders: (): boolean => (vscode.workspace.workspaceFolders?.length ?? 0) > 0,
 
+  applyTo: (): WriteTarget =>
+    vscode.workspace.getConfiguration('vibeThemer').get<string>('applyTo') === 'workspace'
+      ? 'workspace'
+      : 'global',
+
   applySetting: async (
     setting: ThemeSetting,
     preference: NonEmptyArray<WriteTarget>,
