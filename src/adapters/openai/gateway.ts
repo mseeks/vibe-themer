@@ -11,12 +11,18 @@ const classify = (e: unknown): ProviderError =>
 
 const clientFor = (key: Redacted<ApiKey>): OpenAI => new OpenAI({ apiKey: expose(key) });
 
-// GPT-5 / o-series are reasoning models; `minimal` effort keeps them fast and
-// streaming token-by-token (the "watch it paint" UX) rather than pausing to think.
-// Non-reasoning custom models (e.g. gpt-4o) reject the parameter, so only send it
-// where it's supported.
+// GPT-5 / o-series reason by default, which stalls the "watch it paint" UX, so we ask
+// for the lowest effort. The scale differs by generation — gpt-5.1+ (e.g. gpt-5.5,
+// gpt-5.4-mini) use 'none'/'low'/… and reject 'minimal'; gpt-5 and o-series use
+// 'minimal'/'low'/… and reject 'none'. 'low' is the one value valid on both, so it's
+// the safe floor for any reasoning-family id, including custom ones. Non-reasoning
+// models (e.g. gpt-4o) reject the parameter entirely, so it's only sent when matched.
 const REASONING_FAMILY = /^(gpt-5|o[0-9])/i;
 export const isReasoningModel = (id: string): boolean => REASONING_FAMILY.test(id);
+
+/** Reasoning-effort params to merge into the request (empty for non-reasoning models). */
+export const reasoningParams = (id: string): { readonly reasoning_effort?: 'low' } =>
+  isReasoningModel(id) ? { reasoning_effort: 'low' } : {};
 
 export async function* toContentStream(
   stream: AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>,
@@ -55,7 +61,7 @@ export const createOpenAiAdapter = (): ProviderAdapter => ({
             { role: 'user', content: request.user },
           ],
           stream: true,
-          ...(isReasoningModel(id) ? { reasoning_effort: 'minimal' as const } : {}),
+          ...reasoningParams(id),
         }),
       classify,
     );

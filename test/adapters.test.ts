@@ -12,7 +12,11 @@ import { type ApiKey } from '../src/domain/apiKey';
 import { makeModel, modelText, type ModelId } from '../src/domain/model';
 import { classifyByStatus } from '../src/adapters/classify';
 import { createModelGateway } from '../src/adapters/gateway';
-import { isReasoningModel, toContentStream as openAiStream } from '../src/adapters/openai/gateway';
+import {
+  isReasoningModel,
+  reasoningParams,
+  toContentStream as openAiStream,
+} from '../src/adapters/openai/gateway';
 import { toContentStream as anthropicStream } from '../src/adapters/anthropic/gateway';
 import { type ProviderAdapter, type ProviderRequest } from '../src/ports';
 
@@ -35,6 +39,19 @@ describe('isReasoningModel (OpenAI reasoning_effort gate)', () => {
     }
     for (const id of ['gpt-4o', 'gpt-4.1', 'claude-sonnet-4-6']) {
       assert.equal(isReasoningModel(id), false, id);
+    }
+  });
+});
+
+describe('reasoningParams', () => {
+  it("sends reasoning_effort 'low' for reasoning models, omits it otherwise", () => {
+    // 'low' is valid on both the gpt-5/o-series (minimal/low/…) and gpt-5.1+
+    // (none/low/…/xhigh) scales — 'minimal' 400s on gpt-5.5, so must not be used.
+    for (const id of ['gpt-5.5', 'gpt-5.4-mini', 'o4-mini']) {
+      assert.deepEqual(reasoningParams(id), { reasoning_effort: 'low' }, id);
+    }
+    for (const id of ['gpt-4o', 'gpt-4.1']) {
+      assert.deepEqual(reasoningParams(id), {}, id);
     }
   });
 });

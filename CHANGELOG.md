@@ -15,8 +15,15 @@ All notable changes to the "Vibe Themer" extension will be documented in this fi
   model the API returns (many of which can't do this task). A **"Custom model id…"**
   option remains for any provider + id.
 - **Default model is now `gpt-5.5`** (was `gpt-4.1`). GPT-5-class and o-series models
-  run at `minimal` reasoning effort so generation still streams live rather than
-  pausing to think.
+  run at `low` reasoning effort so generation still streams live rather than pausing
+  to think.
+
+### Fixed
+- **`gpt-5.5` generation failed with a 400.** The OpenAI adapter sent
+  `reasoning_effort: 'minimal'`, which the gpt-5.1+ scale rejects (it uses
+  `none`/`low`/…/`xhigh`). Switched to `low`, the one value valid on both the older
+  (`minimal`/`low`/…) and newer scales — so every reasoning-family model, including
+  custom ids, works.
 - Command titles are provider-neutral: **Select Model**, **Clear API Keys**, **Reset
   Model Selection**.
 - Architecture: the OpenAI gateway became a provider-neutral `ModelGateway` that
