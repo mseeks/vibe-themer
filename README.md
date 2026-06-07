@@ -64,8 +64,10 @@ Vibe Themer sends your current colors as context and streams only what changes.
 
 ## Privacy
 
-Only your description — and, when iterating, your current theme's color values — is
-sent to your chosen provider (OpenAI or Anthropic). No code, files, or analytics are
+Only your description — and, when iterating, your current Vibe Themer overrides
+under `workbench.colorCustomizations` and `editor.tokenColorCustomizations` (color
+values and token-rule styling) — is sent to your chosen provider (OpenAI or
+Anthropic). Nothing else from your settings, and no code, files, or analytics, is
 collected. Your keys are stored in VS Code's encrypted secret storage. AI-generated
 text is not filtered, so you are responsible for the prompts you write.
 

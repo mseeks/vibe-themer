@@ -98,6 +98,25 @@ synchronous activation.
 - **One direction of dependency.** Swapping an adapter (or a model provider) never
   touches the core.
 
+## Adding a provider
+
+`Provider` is a closed union, so the compiler walks you through every site. The
+full checklist (none of it in the pure use cases):
+
+1. `src/domain/provider.ts` — add the variant to `Provider` and `allProviders`,
+   and a `providerInfo` case (display name + key prefix + hint).
+2. `src/domain/apiKey.ts` — extend `hasValidPrefix` if the new prefix overlaps an
+   existing one (the way `sk-` is a prefix of `sk-ant-`).
+3. `src/domain/model.ts` — add a `CATALOG` entry so it's offered in the picker.
+4. `src/adapters/<provider>/gateway.ts` — implement `ProviderAdapter`
+   (`verify` + `streamTheme`); reuse `adapters/classify.ts` for status mapping.
+5. `src/adapters/vscode/secrets.ts` — add the storage key in `STORAGE_KEY`.
+6. `src/extension.ts` — construct the adapter and pass it to `createModelGateway`.
+
+Steps 1 and 6 won't type-check until the others are done, which is the point: the
+union and the `Record<Provider, ProviderAdapter>` make a half-wired provider a
+compile error.
+
 ## Configuration & secrets
 
 - API keys: one per provider in VS Code `SecretStorage`, wrapped in `Redacted`
