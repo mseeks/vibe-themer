@@ -30,7 +30,11 @@ export interface HarnessOptions {
   /** Override the chosen model; defaults to none → the app uses DEFAULT_MODEL. */
   readonly selectedModel?: Model;
   readonly streamText?: string;
+  /** Fail the stream at *open* time (streamTheme returns Err). */
   readonly streamError?: ProviderError;
+  /** Fail *mid-stream*: yield this many chunks, then throw `streamThrowError`. */
+  readonly streamThrowAfter?: number;
+  readonly streamThrowError?: ProviderError;
   readonly chunkSize?: number;
   readonly cancelAfterReports?: number;
   readonly cancellationChoice?: KeepOrReset;
@@ -78,6 +82,24 @@ async function* fromChunks(parts: ReadonlyArray<string>): AsyncIterable<string> 
   for (const part of parts) {
     yield part;
   }
+}
+
+// Mimics a real adapter's toContentStream after `throwAfter` chunks: it throws a
+// classified ProviderError, exactly as the SDK path does on a mid-stream failure.
+async function* fromChunksThenThrow(
+  parts: ReadonlyArray<string>,
+  throwAfter: number,
+  error: ProviderError,
+): AsyncIterable<string> {
+  let yielded = 0;
+  for (const part of parts) {
+    if (yielded >= throwAfter) {
+      throw error;
+    }
+    yield part;
+    yielded += 1;
+  }
+  throw error;
 }
 
 export const harness = (options: HarnessOptions = {}): Harness => {
@@ -152,9 +174,16 @@ export const harness = (options: HarnessOptions = {}): Harness => {
       verify: async () => ok(undefined),
       streamTheme: async (request) => {
         captured.streamUserPrompt = request.user;
-        return options.streamError !== undefined
-          ? { _tag: 'Err', error: options.streamError }
-          : ok(fromChunks(chunk(options.streamText ?? '', options.chunkSize ?? 7)));
+        if (options.streamError !== undefined) {
+          return { _tag: 'Err', error: options.streamError };
+        }
+        const parts = chunk(options.streamText ?? '', options.chunkSize ?? 7);
+        if (options.streamThrowError !== undefined) {
+          return ok(
+            fromChunksThenThrow(parts, options.streamThrowAfter ?? 1, options.streamThrowError),
+          );
+        }
+        return ok(fromChunks(parts));
       },
     },
 

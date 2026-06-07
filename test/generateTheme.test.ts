@@ -107,6 +107,31 @@ describe('generateTheme — failures', () => {
     });
   });
 
+  it('surfaces a mid-stream provider error and keeps the partial theme', async () => {
+    // The stream opens, applies some settings, then throws (e.g. a 429 once tokens
+    // flow). Before the fix this escaped as an unhandled rejection; now it is a
+    // typed StreamInterrupted error and the partial theme is left for the user.
+    const h = harness({
+      storedKey: VALID_KEY,
+      vibe: 'cozy',
+      streamText: HAPPY_STREAM,
+      chunkSize: 1000,
+      streamThrowAfter: 1,
+      streamThrowError: { _tag: 'RateLimited' },
+    });
+    const result = await generateTheme(h.caps);
+
+    assert.equal(result._tag, 'Err');
+    if (result._tag === 'Err' && result.error._tag === 'StreamInterrupted') {
+      assert.equal(result.error.error._tag, 'RateLimited');
+      assert.equal(result.error.applied, 3);
+    } else {
+      assert.fail(`expected StreamInterrupted, got ${JSON.stringify(result)}`);
+    }
+    assert.equal(h.colors.get('editor.background'), '#1a1a1a');
+    assert.equal(h.captured.resets, 0);
+  });
+
   it('aborts after too many malformed lines', async () => {
     const garbage = Array.from({ length: 6 }, (_unused, i) => `GARBAGE:${i}`).join('\n');
     const h = harness({ storedKey: VALID_KEY, vibe: 'cozy', streamText: garbage });

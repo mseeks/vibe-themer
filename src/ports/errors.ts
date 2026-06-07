@@ -40,6 +40,25 @@ export type ProviderError =
   | { readonly _tag: 'Network' }
   | { readonly _tag: 'Unexpected'; readonly detail: string };
 
+const PROVIDER_ERROR_TAGS: ReadonlyArray<ProviderError['_tag']> = [
+  'AuthFailed',
+  'RateLimited',
+  'Network',
+  'Unexpected',
+];
+
+/**
+ * A stream can only fail by *throwing*, so a mid-stream provider failure reaches the
+ * consumer as a thrown value. Adapters classify it to a `ProviderError` before
+ * re-throwing; this guard lets the application turn that thrown value back into a
+ * typed error instead of letting it escape as an unhandled rejection.
+ */
+export const isProviderError = (e: unknown): e is ProviderError =>
+  typeof e === 'object' &&
+  e !== null &&
+  '_tag' in e &&
+  (PROVIDER_ERROR_TAGS as ReadonlyArray<string>).includes((e as { readonly _tag: string })._tag);
+
 export type ConfigError =
   | { readonly _tag: 'WriteFailed'; readonly target: WriteTarget }
   | { readonly _tag: 'AllTargetsFailed' };

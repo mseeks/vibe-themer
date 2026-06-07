@@ -28,10 +28,17 @@ const clientFor = (key: Redacted<ApiKey>): Anthropic => new Anthropic({ apiKey: 
 async function* toContentStream(
   stream: AsyncIterable<Anthropic.Messages.RawMessageStreamEvent>,
 ): AsyncIterable<string> {
-  for await (const event of stream) {
-    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-      yield event.delta.text;
+  // A failure *after* the stream opens (429 once tokens flow, dropped socket, idle
+  // timeout) surfaces by throwing here. Classify it so the consumer sees a typed
+  // ProviderError instead of a raw SDK error / unhandled rejection.
+  try {
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        yield event.delta.text;
+      }
     }
+  } catch (e) {
+    throw classify(e);
   }
 }
 

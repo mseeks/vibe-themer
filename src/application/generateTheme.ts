@@ -36,6 +36,7 @@ import { parseLine, renderParseError } from '../protocol/streamingParser';
 import {
   type CancellationSignal,
   type Capabilities,
+  isProviderError,
   type KeepOrReset,
   type Millis,
   type ProgressReporter,
@@ -71,6 +72,7 @@ export type GenerationError =
   | { readonly _tag: 'Ui'; readonly error: UiError }
   | { readonly _tag: 'Prompt'; readonly error: PromptError }
   | { readonly _tag: 'Provider'; readonly error: ProviderError }
+  | { readonly _tag: 'StreamInterrupted'; readonly applied: number; readonly error: ProviderError }
   | { readonly _tag: 'Aborted'; readonly applied: number; readonly lastError: string };
 
 type ApplyStatus = 'ok' | 'error';
@@ -78,6 +80,7 @@ type ApplyStatus = 'ok' | 'error';
 type ConsumeOutcome =
   | { readonly _tag: 'Completed'; readonly applied: number }
   | { readonly _tag: 'Cancelled'; readonly applied: number }
+  | { readonly _tag: 'StreamFailed'; readonly applied: number; readonly error: ProviderError }
   | { readonly _tag: 'Aborted'; readonly applied: number; readonly lastError: string };
 
 // ── The streaming consume loop ─────────────────────────────────────────────────
@@ -152,22 +155,29 @@ const consumeStream = async (
     return errors >= MAX_RECOVERABLE_ERRORS ? { _tag: 'Aborted', applied, lastError } : null;
   };
 
-  for await (const chunk of stream) {
-    if (signal.isCancelled()) {
-      break;
-    }
-    buffer += chunk;
-    const segments = buffer.split('\n');
-    buffer = segments.pop() ?? '';
-    for (const line of segments) {
+  try {
+    for await (const chunk of stream) {
       if (signal.isCancelled()) {
         break;
       }
-      const aborted = await handleLine(line);
-      if (aborted !== null) {
-        return aborted;
+      buffer += chunk;
+      const segments = buffer.split('\n');
+      buffer = segments.pop() ?? '';
+      for (const line of segments) {
+        if (signal.isCancelled()) {
+          break;
+        }
+        const aborted = await handleLine(line);
+        if (aborted !== null) {
+          return aborted;
+        }
       }
     }
+  } catch (e) {
+    // The stream threw after opening (provider error mid-generation). Adapters
+    // re-throw a classified ProviderError; anything else becomes Unexpected.
+    const error: ProviderError = isProviderError(e) ? e : { _tag: 'Unexpected', detail: String(e) };
+    return { _tag: 'StreamFailed', applied, error };
   }
 
   // Flush a trailing partial line on clean completion (v1 parity); ignore its errors.
@@ -193,6 +203,9 @@ const finalize = (
   matchTag(consumed, {
     Aborted: ({ applied, lastError }): AsyncResultType<GenerationError, GenerationOutcome> =>
       Promise.resolve(err({ _tag: 'Aborted', applied, lastError })),
+
+    StreamFailed: ({ applied, error }): AsyncResultType<GenerationError, GenerationOutcome> =>
+      Promise.resolve(err({ _tag: 'StreamInterrupted', applied, error })),
 
     Completed: async ({ applied }): AsyncResultType<GenerationError, GenerationOutcome> => {
       const choice = await caps.ui.announceCompletion({
@@ -290,6 +303,13 @@ export const renderGenerationError = (e: GenerationError): Option.Option<UserMes
     Ui: ({ error }) => some(renderUiError(error)),
     Prompt: ({ error }) => some(renderPromptError(error)),
     Provider: ({ error }) => some(renderProviderError(error)),
+    StreamInterrupted: ({ applied, error }) =>
+      some(
+        userMessage(renderProviderError(error).title, {
+          detail: `Generation stopped after applying ${applied} settings.`,
+          suggestion: 'Try again, or run "Reset Theme Customizations" to start fresh.',
+        }),
+      ),
     Aborted: ({ applied, lastError }) =>
       some(
         userMessage('⚠️ Theme generation was interrupted', {
