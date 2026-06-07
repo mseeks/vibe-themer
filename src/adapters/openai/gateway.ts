@@ -1,11 +1,11 @@
 import OpenAI from 'openai';
-import { AsyncResult, type AsyncResultType, err, expose, isNonEmptyArray, type NonEmptyArray, ok, type Redacted } from '../../fp';
+import { AsyncResult, type AsyncResultType, expose, ok, type Redacted } from '../../fp';
 import { type ApiKey } from '../../domain/apiKey';
-import { isGptModel, type ModelId, modelText, parseModelId } from '../../domain/model';
-import { type GenerationRequest, type OpenAiError, type OpenAiGateway } from '../../ports';
+import { modelText } from '../../domain/model';
+import { type ProviderAdapter, type ProviderError, type ProviderRequest } from '../../ports';
 
 /** Classify an SDK error by status code, instead of v1's substring sniffing. */
-const classify = (e: unknown): OpenAiError => {
+const classify = (e: unknown): ProviderError => {
   if (e instanceof OpenAI.APIError) {
     if (e.status === 401 || e.status === 403) {
       return { _tag: 'AuthFailed' };
@@ -23,6 +23,13 @@ const classify = (e: unknown): OpenAiError => {
 
 const clientFor = (key: Redacted<ApiKey>): OpenAI => new OpenAI({ apiKey: expose(key) });
 
+// GPT-5 / o-series are reasoning models; `minimal` effort keeps them fast and
+// streaming token-by-token (the "watch it paint" UX) rather than pausing to think.
+// Non-reasoning custom models (e.g. gpt-4o) reject the parameter, so only send it
+// where it's supported.
+const REASONING_FAMILY = /^(gpt-5|o[0-9])/i;
+const isReasoningModel = (id: string): boolean => REASONING_FAMILY.test(id);
+
 async function* toContentStream(
   stream: AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>,
 ): AsyncIterable<string> {
@@ -34,45 +41,26 @@ async function* toContentStream(
   }
 }
 
-export const createOpenAiGateway = (): OpenAiGateway => ({
+export const createOpenAiAdapter = (): ProviderAdapter => ({
   verify: (key) =>
     AsyncResult.tryCatch(async () => {
       await clientFor(key).models.list();
     }, classify),
 
-  listGptModels: async (
-    key,
-  ): AsyncResultType<OpenAiError, NonEmptyArray<ModelId>> => {
-    const listed = await AsyncResult.tryCatch(
-      async () => (await clientFor(key).models.list()).data,
-      classify,
-    );
-    if (listed._tag === 'Err') {
-      return listed;
-    }
-
-    const models: ModelId[] = [];
-    for (const model of listed.value) {
-      const parsed = parseModelId(model.id);
-      if (parsed._tag === 'Some' && isGptModel(parsed.value)) {
-        models.push(parsed.value);
-      }
-    }
-    return isNonEmptyArray(models) ? ok(models) : err({ _tag: 'NoModelsAvailable' });
-  },
-
   streamTheme: async (
-    request: GenerationRequest,
-  ): AsyncResultType<OpenAiError, AsyncIterable<string>> => {
+    request: ProviderRequest,
+  ): AsyncResultType<ProviderError, AsyncIterable<string>> => {
+    const id = modelText(request.model);
     const opened = await AsyncResult.tryCatch(
       () =>
         clientFor(request.key).chat.completions.create({
-          model: modelText(request.model),
+          model: id,
           messages: [
             { role: 'system', content: request.system },
             { role: 'user', content: request.user },
           ],
           stream: true,
+          ...(isReasoningModel(id) ? { reasoning_effort: 'minimal' as const } : {}),
         }),
       classify,
     );

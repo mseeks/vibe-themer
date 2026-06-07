@@ -34,11 +34,10 @@ export type StorageError = {
 
 export type PromptError = { readonly _tag: 'PromptUnavailable' } | { readonly _tag: 'PromptEmpty' };
 
-export type OpenAiError =
+export type ProviderError =
   | { readonly _tag: 'AuthFailed' }
   | { readonly _tag: 'RateLimited' }
   | { readonly _tag: 'Network' }
-  | { readonly _tag: 'NoModelsAvailable' }
   | { readonly _tag: 'Unexpected'; readonly detail: string };
 
 export type ConfigError =
@@ -49,26 +48,22 @@ export type UiError = { readonly _tag: 'UiFailure' };
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
 
-export const renderOpenAiError = (e: OpenAiError): UserMessage =>
+export const renderProviderError = (e: ProviderError): UserMessage =>
   matchTag(e, {
     AuthFailed: () =>
-      userMessage('🔑 OpenAI rejected the API key', {
+      userMessage('🔑 The provider rejected the API key', {
         suggestion: 'Clear the key and enter a valid one, then check your account access.',
       }),
     RateLimited: () =>
-      userMessage('🔑 OpenAI rate limit or quota reached', {
-        suggestion: 'Check your plan and usage on the OpenAI dashboard, then try again.',
+      userMessage('🔑 Provider rate limit or quota reached', {
+        suggestion: 'Check your plan and usage on the provider dashboard, then try again.',
       }),
     Network: () =>
-      userMessage('🌐 Could not reach OpenAI', {
+      userMessage('🌐 Could not reach the model provider', {
         suggestion: 'Check your internet connection and try again.',
       }),
-    NoModelsAvailable: () =>
-      userMessage('⚠️ No models available for this API key', {
-        suggestion: 'Verify the key has access to GPT models.',
-      }),
     Unexpected: ({ detail }) =>
-      userMessage('❌ The OpenAI request failed', { detail, suggestion: 'Please try again.' }),
+      userMessage('❌ The model request failed', { detail, suggestion: 'Please try again.' }),
   });
 
 export const renderPromptError = (e: PromptError): UserMessage =>

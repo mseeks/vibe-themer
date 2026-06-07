@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
-import { none, type NonEmptyArray, ok, Option, type OptionType, some } from '../../fp';
+import { none, ok, Option, type OptionType, some } from '../../fp';
 import { parseApiKey, renderApiKeyError } from '../../domain/apiKey';
 import { describeCoverage } from '../../domain/coverage';
 import { renderValidationError } from '../../domain/errors';
-import { type ModelId, modelText, parseModelId } from '../../domain/model';
+import { makeModel, type Model, modelText, sameModel, type SupportedModel } from '../../domain/model';
+import { allProviders, type Provider, providerInfo } from '../../domain/provider';
 import { parseVibe, type Vibe } from '../../domain/vibe';
 import {
   type CancellationSignal,
@@ -34,6 +35,36 @@ const messageText = (message: UserMessage): string =>
   message.suggestion._tag === 'Some'
     ? `${message.title} — ${message.suggestion.value}`
     : message.title;
+
+interface ModelPickItem extends vscode.QuickPickItem {
+  readonly model?: Model;
+  readonly custom?: boolean;
+}
+
+interface ProviderPickItem extends vscode.QuickPickItem {
+  readonly provider: Provider;
+}
+
+/** The "Custom model id…" flow: pick a provider, then type any model id. */
+const pickCustomModel = async (): Promise<OptionType<Model>> => {
+  const providerPick = await vscode.window.showQuickPick<ProviderPickItem>(
+    allProviders.map((p) => ({ label: providerInfo(p).displayName, provider: p })),
+    { title: 'Custom model — choose a provider', ignoreFocusOut: true },
+  );
+  if (providerPick === undefined) {
+    return none;
+  }
+  const id = await vscode.window.showInputBox({
+    prompt: `Enter the ${providerInfo(providerPick.provider).displayName} model id`,
+    ignoreFocusOut: true,
+    placeHolder: providerPick.provider === 'openai' ? 'gpt-5.5' : 'claude-sonnet-4-6',
+    validateInput: (value) => (value.trim().length > 0 ? undefined : 'Enter a model id'),
+  });
+  if (id === undefined || id.trim().length === 0) {
+    return none;
+  }
+  return some(makeModel(providerPick.provider, id.trim()));
+};
 
 export const createUi = (): Ui => ({
   pickVibe: (suggestions: ReadonlyArray<Suggestion>) =>
@@ -80,31 +111,51 @@ export const createUi = (): Ui => ({
       quickPick.show();
     }),
 
-  promptForApiKey: async () => {
+  promptForApiKey: async (provider) => {
+    const info = providerInfo(provider);
     const raw = await vscode.window.showInputBox({
-      prompt: 'Enter your OpenAI API Key',
+      prompt: `Enter your ${info.displayName} API Key`,
       password: true,
       ignoreFocusOut: true,
-      placeHolder: 'sk-…',
+      placeHolder: info.keyHint,
       validateInput: (value) => {
-        const parsed = parseApiKey(value);
+        const parsed = parseApiKey(provider, value);
         return parsed._tag === 'Err' ? renderApiKeyError(parsed.error) : undefined;
       },
     });
     return ok(Option.fromNullable(raw));
   },
 
-  pickModel: async (models: NonEmptyArray<ModelId>, current: OptionType<ModelId>) => {
-    const currentText = current._tag === 'Some' ? modelText(current.value) : undefined;
-    const picked = await vscode.window.showQuickPick(models.map(modelText), {
-      title: '🤖 Select OpenAI Model for Theme Generation',
-      placeHolder:
-        currentText !== undefined
-          ? `Currently using: ${currentText}`
-          : 'Choose a model (a GPT-4 class model is recommended)',
-      ignoreFocusOut: true,
+  pickModel: async (catalog: ReadonlyArray<SupportedModel>, current: OptionType<Model>) => {
+    const currentModel = current._tag === 'Some' ? current.value : undefined;
+    const items: ModelPickItem[] = catalog.map((entry) => ({
+      label: entry.displayName,
+      description: entry.blurb,
+      model: entry.model,
+      ...(currentModel !== undefined && sameModel(currentModel, entry.model)
+        ? { detail: '$(check) current' }
+        : {}),
+    }));
+    items.push({
+      label: '$(edit) Custom model id…',
+      description: 'Enter any provider + model id',
+      custom: true,
     });
-    return ok(picked === undefined ? none : parseModelId(picked));
+
+    const picked = await vscode.window.showQuickPick<ModelPickItem>(items, {
+      title: '🤖 Select a model for theme generation',
+      ignoreFocusOut: true,
+      placeHolder:
+        currentModel !== undefined ? `Current: ${modelText(currentModel.id)}` : 'Pick a model',
+    });
+
+    if (picked === undefined) {
+      return ok(none);
+    }
+    if (picked.custom === true) {
+      return ok(await pickCustomModel());
+    }
+    return ok(picked.model !== undefined ? some(picked.model) : none);
   },
 
   runWithProgress: <A>(

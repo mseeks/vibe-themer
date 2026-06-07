@@ -28,14 +28,16 @@ generates it.
 - **Live streaming.** Watch the theme apply as each setting arrives.
 - **Comprehensive.** Editor, activity bar, sidebar, status bar, tabs, panels,
   terminal, and syntax tokens.
-- **Your key, your storage.** The OpenAI key lives in VS Code's encrypted secret
-  storage and is never logged.
-- **Model choice.** Use any GPT model your key can access.
+- **OpenAI or Anthropic.** Pick from a short curated list — GPT-5.5 (default),
+  GPT-5.4 mini, or Claude Sonnet 4.6 — or enter a custom model id.
+- **Your keys, your storage.** Each provider's key lives in VS Code's encrypted
+  secret storage and is never logged.
 
 ## Requirements
 
 - VS Code 1.74.0 or higher
-- An OpenAI API key ([get one](https://platform.openai.com/))
+- An API key for your chosen provider — OpenAI ([get one](https://platform.openai.com/))
+  or Anthropic ([get one](https://console.anthropic.com/))
 - Internet access
 
 ## Quick start
@@ -43,7 +45,7 @@ generates it.
 1. Install Vibe Themer from the Marketplace.
 2. Open the Command Palette (`Cmd/Ctrl+Shift+P`) and run **Vibe Themer: Change
    Theme**.
-3. Enter your OpenAI API key when prompted (stored securely, only once).
+3. Enter your provider API key when prompted (stored securely, only once).
 4. Describe a vibe, e.g. `warm sunset over mountains`.
 5. To change back, run **Vibe Themer: Reset Theme Customizations**.
 
@@ -56,16 +58,16 @@ Vibe Themer sends your current colors as context and streams only what changes.
 | --- | --- |
 | **Vibe Themer: Change Theme** | Generate or iterate a theme from a description |
 | **Vibe Themer: Reset Theme Customizations** | Remove all overrides, restore your original theme |
-| **Vibe Themer: Select OpenAI Model** | Choose which GPT model to use |
-| **Vibe Themer: Reset OpenAI Model Selection** | Revert to the default model |
-| **Vibe Themer: Clear OpenAI API Key** | Remove the stored key |
+| **Vibe Themer: Select Model** | Pick a model from the curated list or enter a custom id |
+| **Vibe Themer: Reset Model Selection** | Revert to the default model (GPT-5.5) |
+| **Vibe Themer: Clear API Keys** | Remove the stored keys for all providers |
 
 ## Privacy
 
 Only your description — and, when iterating, your current theme's color values — is
-sent to OpenAI. No code, files, or analytics are collected. Your key is stored in
-VS Code's encrypted secret storage. AI-generated text is not filtered, so you are
-responsible for the prompts you write.
+sent to your chosen provider (OpenAI or Anthropic). No code, files, or analytics are
+collected. Your keys are stored in VS Code's encrypted secret storage. AI-generated
+text is not filtered, so you are responsible for the prompts you write.
 
 ## Background
 

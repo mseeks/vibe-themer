@@ -6,7 +6,7 @@ import { parseSelector } from '../src/domain/selector';
 import { parseTokenScope } from '../src/domain/tokenScope';
 import { parseFontStyle } from '../src/domain/fontStyle';
 import { parseApiKey, renderApiKeyError } from '../src/domain/apiKey';
-import { DEFAULT_MODEL, isGptModel, parseModelId } from '../src/domain/model';
+import { CATALOG, DEFAULT_MODEL, makeModel, modelText, parseModelId, sameModel } from '../src/domain/model';
 import { expose } from '../src/fp';
 
 describe('parseColor', () => {
@@ -66,38 +66,62 @@ describe('parseFontStyle', () => {
 });
 
 describe('parseApiKey', () => {
-  it('validates the sk- prefix and length, and wraps in Redacted', () => {
-    const good = parseApiKey(`sk-${'x'.repeat(40)}`);
+  it('validates the provider prefix and length, wrapping in Redacted', () => {
+    const good = parseApiKey('openai', `sk-${'x'.repeat(40)}`);
     assert.equal(good._tag, 'Ok');
     if (good._tag === 'Ok') {
       assert.equal(String(good.value), '<redacted>');
       assert.equal(JSON.stringify({ key: good.value }), '{"key":"<redacted>"}');
       assert.equal(expose(good.value).startsWith('sk-'), true);
     }
+    assert.equal(parseApiKey('anthropic', `sk-ant-${'x'.repeat(40)}`)._tag, 'Ok');
   });
 
-  it('rejects empty, bad prefix, and too-short keys without echoing the key', () => {
-    assert.deepEqual(parseApiKey(''), { _tag: 'Err', error: { _tag: 'KeyEmpty' } });
-    assert.deepEqual(parseApiKey('pk-123456789012345678901234'), {
+  it('rejects empty, wrong-prefix, and too-short keys without echoing the key', () => {
+    assert.deepEqual(parseApiKey('openai', ''), { _tag: 'Err', error: { _tag: 'KeyEmpty' } });
+    assert.deepEqual(parseApiKey('openai', 'pk-123456789012345678901234'), {
       _tag: 'Err',
-      error: { _tag: 'KeyBadPrefix' },
+      error: { _tag: 'KeyBadPrefix', provider: 'openai' },
     });
-    assert.deepEqual(parseApiKey('sk-short'), { _tag: 'Err', error: { _tag: 'KeyTooShort' } });
-    assert.equal(renderApiKeyError({ _tag: 'KeyBadPrefix' }).includes('pk-'), false);
+    assert.deepEqual(parseApiKey('openai', 'sk-short'), {
+      _tag: 'Err',
+      error: { _tag: 'KeyTooShort' },
+    });
+    assert.equal(
+      renderApiKeyError({ _tag: 'KeyBadPrefix', provider: 'openai' }).includes('pk-'),
+      false,
+    );
+  });
+
+  it('routes keys per provider — an Anthropic key is invalid for OpenAI and vice versa', () => {
+    assert.deepEqual(parseApiKey('openai', `sk-ant-${'x'.repeat(40)}`), {
+      _tag: 'Err',
+      error: { _tag: 'KeyBadPrefix', provider: 'openai' },
+    });
+    assert.deepEqual(parseApiKey('anthropic', `sk-${'x'.repeat(40)}`), {
+      _tag: 'Err',
+      error: { _tag: 'KeyBadPrefix', provider: 'anthropic' },
+    });
   });
 });
 
-describe('model', () => {
-  it('defaults to gpt-4.1 and recognizes GPT ids', () => {
-    assert.equal(String(DEFAULT_MODEL), 'gpt-4.1');
-    const m = parseModelId('gpt-4o');
-    assert.equal(m._tag, 'Some');
-    if (m._tag === 'Some') {
-      assert.equal(isGptModel(m.value), true);
-    }
-    const c = parseModelId('claude-3');
-    if (c._tag === 'Some') {
-      assert.equal(isGptModel(c.value), false);
-    }
+describe('model & catalog', () => {
+  it('defaults to gpt-5.5 on OpenAI', () => {
+    assert.equal(DEFAULT_MODEL.provider, 'openai');
+    assert.equal(modelText(DEFAULT_MODEL.id), 'gpt-5.5');
+  });
+
+  it('curates a small catalog that includes the default', () => {
+    const ids = CATALOG.map((s) => modelText(s.model.id));
+    assert.ok(ids.includes('gpt-5.5'));
+    assert.ok(ids.includes('claude-sonnet-4-6'));
+    assert.ok(CATALOG.some((s) => sameModel(s.model, DEFAULT_MODEL)));
+  });
+
+  it('parses a custom id and compares models by provider + id', () => {
+    assert.equal(parseModelId('gpt-4o')._tag, 'Some');
+    assert.equal(parseModelId('   ')._tag, 'None');
+    assert.equal(sameModel(makeModel('openai', 'x'), makeModel('openai', 'x')), true);
+    assert.equal(sameModel(makeModel('openai', 'x'), makeModel('anthropic', 'x')), false);
   });
 });

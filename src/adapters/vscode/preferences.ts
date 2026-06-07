@@ -1,17 +1,30 @@
 import type * as vscode from 'vscode';
-import { none, type OptionType } from '../../fp';
-import { type ModelId, modelText, parseModelId } from '../../domain/model';
+import { none, type OptionType, some } from '../../fp';
+import { makeModel, type Model, modelText } from '../../domain/model';
+import { allProviders, type Provider } from '../../domain/provider';
 import { type Preferences } from '../../ports';
 
-const MODEL_KEY = 'openaiModel';
+const MODEL_KEY = 'selectedModel';
+
+interface StoredModel {
+  readonly provider: string;
+  readonly id: string;
+}
+
+const isProvider = (value: string): value is Provider =>
+  (allProviders as ReadonlyArray<string>).includes(value);
+
+const toModel = (stored: StoredModel | undefined): OptionType<Model> => {
+  if (stored === undefined || typeof stored.id !== 'string' || !isProvider(stored.provider)) {
+    return none;
+  }
+  return stored.id.trim().length > 0 ? some(makeModel(stored.provider, stored.id)) : none;
+};
 
 export const createPreferences = (state: vscode.Memento): Preferences => ({
-  selectedModel: (): OptionType<ModelId> => {
-    const raw = state.get<string>(MODEL_KEY);
-    return raw === undefined ? none : parseModelId(raw);
-  },
-  selectModel: async (model) => {
-    await state.update(MODEL_KEY, modelText(model));
+  selectedModel: (): OptionType<Model> => toModel(state.get<StoredModel>(MODEL_KEY)),
+  selectModel: async (model: Model) => {
+    await state.update(MODEL_KEY, { provider: model.provider, id: modelText(model.id) });
   },
   clearModel: async () => {
     await state.update(MODEL_KEY, undefined);

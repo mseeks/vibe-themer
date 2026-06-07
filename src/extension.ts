@@ -6,7 +6,9 @@
  */
 
 import * as vscode from 'vscode';
-import { createOpenAiGateway } from './adapters/openai/gateway';
+import { createAnthropicAdapter } from './adapters/anthropic/gateway';
+import { createModelGateway } from './adapters/gateway';
+import { createOpenAiAdapter } from './adapters/openai/gateway';
 import { systemClock } from './adapters/vscode/clock';
 import { createConfigStore } from './adapters/vscode/config';
 import { createLogger } from './adapters/vscode/logger';
@@ -23,7 +25,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const capabilities: Capabilities = {
     secrets: createSecretStore(context.secrets),
-    openai: createOpenAiGateway(),
+    gateway: createModelGateway({
+      openai: createOpenAiAdapter(),
+      anthropic: createAnthropicAdapter(),
+    }),
     config: createConfigStore(),
     prompts: createPromptLibrary(context),
     preferences: createPreferences(context.globalState),

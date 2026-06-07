@@ -28,7 +28,7 @@ import {
 import { type ApiKey } from '../domain/apiKey';
 import { coverage } from '../domain/coverage';
 import { type StreamingDirective } from '../domain/directive';
-import { DEFAULT_MODEL } from '../domain/model';
+import { DEFAULT_MODEL, type Model } from '../domain/model';
 import { type WriteTarget, writePreference } from '../domain/scope';
 import { type ThemeSetting } from '../domain/theme';
 import { type Vibe } from '../domain/vibe';
@@ -38,11 +38,11 @@ import {
   type Capabilities,
   type KeepOrReset,
   type Millis,
-  type OpenAiError,
   type ProgressReporter,
   type PromptError,
+  type ProviderError,
   renderConfigError,
-  renderOpenAiError,
+  renderProviderError,
   renderPromptError,
   renderUiError,
   type UiError,
@@ -70,7 +70,7 @@ export type GenerationError =
   | { readonly _tag: 'Provision'; readonly error: ProvisionError }
   | { readonly _tag: 'Ui'; readonly error: UiError }
   | { readonly _tag: 'Prompt'; readonly error: PromptError }
-  | { readonly _tag: 'OpenAi'; readonly error: OpenAiError }
+  | { readonly _tag: 'Provider'; readonly error: ProviderError }
   | { readonly _tag: 'Aborted'; readonly applied: number; readonly lastError: string };
 
 type ApplyStatus = 'ok' | 'error';
@@ -228,18 +228,24 @@ const resetQuietly = async (caps: Capabilities): Promise<void> => {
 
 const runGeneration = async (
   caps: Capabilities,
+  model: Model,
   key: Redacted<ApiKey>,
   vibe: Vibe,
   system: NonEmptyString,
 ): AsyncResultType<GenerationError, GenerationOutcome> => {
   const current = caps.config.readCurrentTheme();
   const user = buildUserPrompt(current, vibe);
-  const model = Option.getOrElse(() => DEFAULT_MODEL)(caps.preferences.selectedModel());
   const preference = writePreference(caps.config.hasWorkspaceFolders());
 
-  const streamResult = await caps.openai.streamTheme({ key, model, system, user });
+  const streamResult = await caps.gateway.streamTheme({
+    provider: model.provider,
+    key,
+    model: model.id,
+    system,
+    user,
+  });
   if (streamResult._tag === 'Err') {
-    return err({ _tag: 'OpenAi', error: streamResult.error });
+    return err({ _tag: 'Provider', error: streamResult.error });
   }
 
   const consumed = await caps.ui.runWithProgress(PROGRESS_TITLE, (reporter, signal) => {
@@ -253,7 +259,9 @@ const runGeneration = async (
 export const generateTheme = async (
   caps: Capabilities,
 ): AsyncResultType<GenerationError, GenerationOutcome> => {
-  const keyResult = await provisionApiKey(caps);
+  const model = Option.getOrElse(() => DEFAULT_MODEL)(caps.preferences.selectedModel());
+
+  const keyResult = await provisionApiKey(caps, model.provider);
   if (keyResult._tag === 'Err') {
     return keyResult.error._tag === 'Cancelled'
       ? ok({ _tag: 'NoKey' })
@@ -273,7 +281,7 @@ export const generateTheme = async (
     return err({ _tag: 'Prompt', error: promptResult.error });
   }
 
-  return runGeneration(caps, keyResult.value, vibeResult.value.value, promptResult.value);
+  return runGeneration(caps, model, keyResult.value, vibeResult.value.value, promptResult.value);
 };
 
 export const renderGenerationError = (e: GenerationError): Option.Option<UserMessage> =>
@@ -281,7 +289,7 @@ export const renderGenerationError = (e: GenerationError): Option.Option<UserMes
     Provision: ({ error }) => renderProvisionError(error),
     Ui: ({ error }) => some(renderUiError(error)),
     Prompt: ({ error }) => some(renderPromptError(error)),
-    OpenAi: ({ error }) => some(renderOpenAiError(error)),
+    Provider: ({ error }) => some(renderProviderError(error)),
     Aborted: ({ applied, lastError }) =>
       some(
         userMessage('⚠️ Theme generation was interrupted', {

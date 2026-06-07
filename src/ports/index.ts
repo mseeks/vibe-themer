@@ -5,7 +5,7 @@ import {
   type Clock,
   type ConfigStore,
   type Logger,
-  type OpenAiGateway,
+  type ModelGateway,
   type Preferences,
   type PromptLibrary,
   type SecretStore,
@@ -19,7 +19,7 @@ import {
  */
 export interface Capabilities {
   readonly secrets: SecretStore;
-  readonly openai: OpenAiGateway;
+  readonly gateway: ModelGateway;
   readonly config: ConfigStore;
   readonly prompts: PromptLibrary;
   readonly preferences: Preferences;
