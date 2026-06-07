@@ -8,7 +8,7 @@
 import { expose, none, type NonEmptyString, type OptionType, ok, Option, some } from '../../src/fp';
 import { toApplication } from '../../src/domain/color';
 import { fontStyleText } from '../../src/domain/fontStyle';
-import { type Model } from '../../src/domain/model';
+import { type Model, modelText } from '../../src/domain/model';
 import { type Provider } from '../../src/domain/provider';
 import { selectorText } from '../../src/domain/selector';
 import { type CurrentTheme, type ThemeSetting } from '../../src/domain/theme';
@@ -56,6 +56,9 @@ export interface Captured {
   keyCleared: boolean;
   resets: number;
   streamUserPrompt: string;
+  /** What the gateway was actually asked to stream — proves provider/model routing. */
+  streamProvider: Provider | undefined;
+  streamModel: string;
 }
 
 export interface Harness {
@@ -113,6 +116,8 @@ export const harness = (options: HarnessOptions = {}): Harness => {
     keyCleared: false,
     resets: 0,
     streamUserPrompt: '',
+    streamProvider: undefined,
+    streamModel: '',
   };
 
   const activeProvider: Provider = options.selectedModel?.provider ?? 'openai';
@@ -174,6 +179,8 @@ export const harness = (options: HarnessOptions = {}): Harness => {
       verify: async () => ok(undefined),
       streamTheme: async (request) => {
         captured.streamUserPrompt = request.user;
+        captured.streamProvider = request.provider;
+        captured.streamModel = modelText(request.model);
         if (options.streamError !== undefined) {
           return { _tag: 'Err', error: options.streamError };
         }

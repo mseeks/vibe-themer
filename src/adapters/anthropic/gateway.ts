@@ -3,29 +3,17 @@ import { AsyncResult, type AsyncResultType, expose, ok, type Redacted } from '..
 import { type ApiKey } from '../../domain/apiKey';
 import { modelText } from '../../domain/model';
 import { type ProviderAdapter, type ProviderError, type ProviderRequest } from '../../ports';
+import { classifyByStatus } from '../classify';
 
 // The theme protocol is short (~120 one-line settings); this is generous headroom.
 const MAX_TOKENS = 16000;
 
-const classify = (e: unknown): ProviderError => {
-  if (e instanceof Anthropic.APIError) {
-    if (e.status === 401 || e.status === 403) {
-      return { _tag: 'AuthFailed' };
-    }
-    if (e.status === 429) {
-      return { _tag: 'RateLimited' };
-    }
-    if (e.status === undefined) {
-      return { _tag: 'Network' };
-    }
-    return { _tag: 'Unexpected', detail: e.message };
-  }
-  return { _tag: 'Network' };
-};
+const classify = (e: unknown): ProviderError =>
+  e instanceof Anthropic.APIError ? classifyByStatus(e.status, e.message) : { _tag: 'Network' };
 
 const clientFor = (key: Redacted<ApiKey>): Anthropic => new Anthropic({ apiKey: expose(key) });
 
-async function* toContentStream(
+export async function* toContentStream(
   stream: AsyncIterable<Anthropic.Messages.RawMessageStreamEvent>,
 ): AsyncIterable<string> {
   // A failure *after* the stream opens (429 once tokens flow, dropped socket, idle
