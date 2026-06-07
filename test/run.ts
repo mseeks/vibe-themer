@@ -7,7 +7,9 @@
 import './redacted.test';
 import './parser.test';
 import './domain.test';
+import './customizations.test';
 import './progress.test';
 import './theme.test';
+import './context.test';
 import './commandIds.test';
 import './generateTheme.test';

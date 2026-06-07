@@ -37,12 +37,21 @@ export const match =
   (ar: AsyncResult<E, A>): Promise<R> =>
     ar.then(Result.match(handlers));
 
-/** Lift a promise that may reject into an `AsyncResult`, mapping the rejection. */
+/**
+ * Lift a promise-returning thunk into an `AsyncResult`, mapping any failure to the
+ * error channel. Handles both a rejected promise and a *synchronous* throw from the
+ * thunk itself (the latter would otherwise escape `.then` and reject the result).
+ */
 export const tryCatch = <E, A>(
   thunk: () => Promise<A>,
   onThrow: (u: unknown) => E,
-): AsyncResult<E, A> =>
-  thunk().then(
-    (value) => Result.ok<A, E>(value),
-    (u: unknown) => Result.err<E, A>(onThrow(u)),
-  );
+): AsyncResult<E, A> => {
+  try {
+    return thunk().then(
+      (value) => Result.ok<A, E>(value),
+      (u: unknown) => Result.err<E, A>(onThrow(u)),
+    );
+  } catch (u) {
+    return Promise.resolve(Result.err<E, A>(onThrow(u)));
+  }
+};

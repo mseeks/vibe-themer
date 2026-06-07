@@ -41,6 +41,20 @@ describe('generateTheme — happy path', () => {
     }
   });
 
+  it('injects existing customizations into the streamed prompt for iteration', async () => {
+    const currentTheme = {
+      global: { colors: { 'editor.background': '#1e1e1e' }, tokens: {} },
+      workspace: { colors: {}, tokens: {} },
+    };
+    const text = ['COUNT:1', 'SELECTOR:editor.background=#2a1f1a', ''].join('\n');
+    const h = harness({ storedKey: VALID_KEY, vibe: 'make it warmer', streamText: text, currentTheme });
+    await generateTheme(h.caps);
+
+    assert.ok(h.captured.streamUserPrompt.includes('CURRENT THEME CONTEXT:'));
+    assert.ok(h.captured.streamUserPrompt.includes('editor.background: #1e1e1e'));
+    assert.ok(h.captured.streamUserPrompt.endsWith('make it warmer'));
+  });
+
   it('prompts for, verifies, and stores a new key, then proceeds', async () => {
     const text = ['COUNT:1', 'SELECTOR:editor.background=#000000', ''].join('\n');
     const h = harness({ promptKey: VALID_KEY, vibe: 'minimal dark', streamText: text });

@@ -55,6 +55,7 @@ export interface Captured {
   keySet: boolean;
   keyCleared: boolean;
   resets: number;
+  streamUserPrompt: string;
 }
 
 export interface Harness {
@@ -92,6 +93,7 @@ export const harness = (options: HarnessOptions = {}): Harness => {
     keySet: false,
     keyCleared: false,
     resets: 0,
+    streamUserPrompt: '',
   };
 
   let storedKey = options.storedKey;
@@ -149,16 +151,18 @@ export const harness = (options: HarnessOptions = {}): Harness => {
         const models: NonEmptyArray<ModelId> = ['gpt-4.1' as ModelId];
         return ok(models);
       },
-      streamTheme: async () =>
-        options.streamError !== undefined
+      streamTheme: async (request) => {
+        captured.streamUserPrompt = request.user;
+        return options.streamError !== undefined
           ? { _tag: 'Err', error: options.streamError }
-          : ok(fromChunks(chunk(options.streamText ?? '', options.chunkSize ?? 7))),
+          : ok(fromChunks(chunk(options.streamText ?? '', options.chunkSize ?? 7)));
+      },
     },
 
     config: {
       readCurrentTheme: () => options.currentTheme ?? emptyTheme,
       hasWorkspaceFolders: () => options.workspaceFolders ?? false,
-      applySetting: async (setting) => {
+      applySetting: async (setting, _preference) => {
         applyToState(setting);
         return ok('global');
       },

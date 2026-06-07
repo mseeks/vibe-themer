@@ -1,9 +1,7 @@
 import * as vscode from 'vscode';
 import { type AsyncResultType, err, type NonEmptyArray, ok } from '../../fp';
-import { toApplication } from '../../domain/color';
-import { fontStyleText } from '../../domain/fontStyle';
+import { applyColor, applyTokenRule, type TextMateRule } from '../../domain/customizations';
 import { type WriteTarget } from '../../domain/scope';
-import { selectorText } from '../../domain/selector';
 import {
   type ColorMap,
   type CurrentTheme,
@@ -11,31 +9,34 @@ import {
   type ThemeSetting,
   type TokenCustomizations,
 } from '../../domain/theme';
-import { tokenScopeText } from '../../domain/tokenScope';
 import { type ConfigError, type ConfigStore } from '../../ports';
 
 const COLOR_KEY = 'workbench.colorCustomizations';
 const TOKEN_KEY = 'editor.tokenColorCustomizations';
-
-interface TextMateRule {
-  readonly scope?: string | ReadonlyArray<string>;
-  readonly settings?: Record<string, unknown>;
-}
 
 interface TokenCustomizationsShape {
   readonly textMateRules?: ReadonlyArray<TextMateRule>;
   readonly [key: string]: unknown;
 }
 
+// VS Code config is user-editable JSON, so reads are validated, never trusted blindly.
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const asColorMap = (value: unknown): ColorMap => (isPlainObject(value) ? (value as ColorMap) : {});
+
+const asTokenShape = (value: unknown): TokenCustomizationsShape =>
+  isPlainObject(value) ? (value as TokenCustomizationsShape) : {};
+
 const targetOf = (target: WriteTarget): vscode.ConfigurationTarget =>
   target === 'global'
     ? vscode.ConfigurationTarget.Global
     : vscode.ConfigurationTarget.Workspace;
 
-const scopedTheme = (
-  colors: ColorMap | undefined,
-  tokens: TokenCustomizations | undefined,
-): ScopedTheme => ({ colors: colors ?? {}, tokens: tokens ?? {} });
+const scopedTheme = (colors: unknown, tokens: unknown): ScopedTheme => ({
+  colors: asColorMap(colors),
+  tokens: isPlainObject(tokens) ? (tokens as TokenCustomizations) : {},
+});
 
 const applyToTarget = async (
   setting: ThemeSetting,
@@ -46,36 +47,13 @@ const applyToTarget = async (
     const vsTarget = targetOf(target);
 
     if (setting._tag === 'SelectorSetting') {
-      const existing: Record<string, string> = { ...(config.get<ColorMap>(COLOR_KEY) ?? {}) };
-      const application = toApplication(setting.color);
-      const key = selectorText(setting.selector);
-      if (application._tag === 'Delete') {
-        delete existing[key];
-      } else {
-        existing[key] = application.value;
-      }
-      await config.update(COLOR_KEY, existing, vsTarget);
+      const existing = asColorMap(config.get<unknown>(COLOR_KEY));
+      const next = applyColor(existing, setting.selector, setting.color);
+      await config.update(COLOR_KEY, next, vsTarget);
     } else {
-      const existing = config.get<TokenCustomizationsShape>(TOKEN_KEY) ?? {};
-      const rules: ReadonlyArray<TextMateRule> = existing.textMateRules ?? [];
-      const scope = tokenScopeText(setting.scope);
-      const withoutScope = rules.filter((rule) => rule.scope !== scope);
-      const application = toApplication(setting.color);
-      const nextRules: ReadonlyArray<TextMateRule> =
-        application._tag === 'Delete'
-          ? withoutScope
-          : [
-              ...withoutScope,
-              {
-                scope,
-                settings: {
-                  foreground: application.value,
-                  ...(setting.fontStyle._tag === 'Some'
-                    ? { fontStyle: fontStyleText(setting.fontStyle.value) }
-                    : {}),
-                },
-              },
-            ];
+      const existing = asTokenShape(config.get<unknown>(TOKEN_KEY));
+      const rules = Array.isArray(existing.textMateRules) ? existing.textMateRules : [];
+      const nextRules = applyTokenRule(rules, setting.scope, setting.color, setting.fontStyle);
       await config.update(TOKEN_KEY, { ...existing, textMateRules: nextRules }, vsTarget);
     }
     return ok(undefined);
@@ -87,8 +65,8 @@ const applyToTarget = async (
 export const createConfigStore = (): ConfigStore => ({
   readCurrentTheme: (): CurrentTheme => {
     const config = vscode.workspace.getConfiguration();
-    const colors = config.inspect<ColorMap>(COLOR_KEY);
-    const tokens = config.inspect<TokenCustomizations>(TOKEN_KEY);
+    const colors = config.inspect<unknown>(COLOR_KEY);
+    const tokens = config.inspect<unknown>(TOKEN_KEY);
     return {
       global: scopedTheme(colors?.globalValue, tokens?.globalValue),
       workspace: scopedTheme(colors?.workspaceValue, tokens?.workspaceValue),
@@ -111,17 +89,17 @@ export const createConfigStore = (): ConfigStore => ({
   },
 
   reset: async (): AsyncResultType<ConfigError, void> => {
-    try {
-      const config = vscode.workspace.getConfiguration();
-      await Promise.allSettled([
-        config.update(COLOR_KEY, undefined, vscode.ConfigurationTarget.Workspace),
-        config.update(TOKEN_KEY, undefined, vscode.ConfigurationTarget.Workspace),
-        config.update(COLOR_KEY, undefined, vscode.ConfigurationTarget.Global),
-        config.update(TOKEN_KEY, undefined, vscode.ConfigurationTarget.Global),
-      ]);
-      return ok(undefined);
-    } catch {
-      return err({ _tag: 'AllTargetsFailed' });
-    }
+    const config = vscode.workspace.getConfiguration();
+    // `allSettled` never rejects, so inspect the outcomes: surface failure only when
+    // every target failed (a workspace-target failure with no folder open is normal).
+    const outcomes = await Promise.allSettled([
+      config.update(COLOR_KEY, undefined, vscode.ConfigurationTarget.Workspace),
+      config.update(TOKEN_KEY, undefined, vscode.ConfigurationTarget.Workspace),
+      config.update(COLOR_KEY, undefined, vscode.ConfigurationTarget.Global),
+      config.update(TOKEN_KEY, undefined, vscode.ConfigurationTarget.Global),
+    ]);
+    return outcomes.every((o) => o.status === 'rejected')
+      ? err({ _tag: 'AllTargetsFailed' })
+      : ok(undefined);
   },
 });
