@@ -14,6 +14,10 @@ AI-generated VS Code color themes. Describe a vibe in plain language and Vibe Th
 streams a complete theme — UI and syntax — applying each color live as the model
 generates it.
 
+<div align="center">
+  <img src="media/demo.gif" alt="Vibe Themer streaming a theme from a described vibe" width="820" />
+</div>
+
 > **Reset, don't switch.** Generated themes are written as VS Code color overrides,
 > so they persist until you remove them. Run **"Vibe Themer: Reset Theme
 > Customizations"** to restore your original theme. Changing the theme in Settings
