@@ -33,11 +33,18 @@ const isReasoningModel = (id: string): boolean => REASONING_FAMILY.test(id);
 async function* toContentStream(
   stream: AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>,
 ): AsyncIterable<string> {
-  for await (const chunk of stream) {
-    const content = chunk.choices[0]?.delta?.content;
-    if (content) {
-      yield content;
+  // A failure *after* the stream opens (429 once tokens flow, dropped socket, idle
+  // timeout) surfaces by throwing here. Classify it so the consumer sees a typed
+  // ProviderError instead of a raw SDK error / unhandled rejection.
+  try {
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) {
+        yield content;
+      }
     }
+  } catch (e) {
+    throw classify(e);
   }
 }
 
