@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo-with-text.png" alt="Vibe Themer Logo" width="500" style="margin-top: 15px; margin-bottom: 15px;" />
+  <img src="logo-with-text.png" alt="Vibe Themer Logo" width="250" style="margin-top: 15px; margin-bottom: 15px;" />
 </div>
 
 <div align="center">
