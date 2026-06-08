@@ -127,6 +127,7 @@ describe('model & catalog', () => {
     const ids = CATALOG.map((s) => modelText(s.model.id));
     assert.ok(ids.includes('gpt-5.5'));
     assert.ok(ids.includes('claude-sonnet-4-6'));
+    assert.ok(ids.includes('claude-haiku-4-5'));
     assert.ok(CATALOG.some((s) => sameModel(s.model, DEFAULT_MODEL)));
   });
 

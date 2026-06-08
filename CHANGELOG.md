@@ -5,15 +5,16 @@ All notable changes to the "Vibe Themer" extension will be documented in this fi
 ## [2.1.0] - 2026-06-06
 
 ### Added
-- **Anthropic models.** Generate themes with Claude (Claude Sonnet 4.6) alongside
-  OpenAI. The Anthropic key is stored separately and requested on first use; the
-  static system prompt is sent with prompt caching for cheaper repeat generations.
+- **Anthropic models.** Generate themes with Claude (Claude Sonnet 4.6 and Claude
+  Haiku 4.5) alongside OpenAI. The Anthropic key is stored separately and requested
+  on first use; the static system prompt is sent with prompt caching for cheaper
+  repeat generations.
 
 ### Changed
 - **Scoped model selection.** "Select Model" now offers a small curated list —
-  **GPT-5.5** (default), **GPT-5.4 mini**, **Claude Sonnet 4.6** — instead of every
-  model the API returns (many of which can't do this task). A **"Custom model id…"**
-  option remains for any provider + id.
+  **GPT-5.5** (default), **GPT-5.4 mini**, **Claude Sonnet 4.6**, **Claude Haiku 4.5**
+  — instead of every model the API returns (many of which can't do this task). A
+  **"Custom model id…"** option remains for any provider + id.
 - **Default model is now `gpt-5.5`** (was `gpt-4.1`). GPT-5-class and o-series models
   run with no reasoning effort so generation streams live rather than pausing to
   think (`none` for gpt-5.1+, `minimal` for older gpt-5/o-series).

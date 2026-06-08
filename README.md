@@ -33,7 +33,7 @@ generates it.
 - **Comprehensive.** Editor, activity bar, sidebar, status bar, tabs, panels,
   terminal, and syntax tokens.
 - **OpenAI or Anthropic.** Pick from a short curated list — GPT-5.5 (default),
-  GPT-5.4 mini, or Claude Sonnet 4.6 — or enter a custom model id.
+  GPT-5.4 mini, Claude Sonnet 4.6, or Claude Haiku 4.5 — or enter a custom model id.
 - **Your keys, your storage.** Each provider's key lives in VS Code's encrypted
   secret storage and is never logged.
 

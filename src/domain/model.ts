@@ -57,6 +57,11 @@ export const CATALOG: ReadonlyArray<SupportedModel> = [
     displayName: 'Claude Sonnet 4.6',
     blurb: 'Anthropic · strong instruction-following',
   },
+  {
+    model: makeModel('anthropic', 'claude-haiku-4-5'),
+    displayName: 'Claude Haiku 4.5',
+    blurb: 'Anthropic · fastest and cheapest',
+  },
 ];
 
 export const DEFAULT_MODEL: Model = makeModel('openai', 'gpt-5.5');
