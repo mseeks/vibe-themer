@@ -48,8 +48,6 @@ export interface CurrentTheme {
   readonly workspace: ScopedTheme;
 }
 
-export const emptyScopedTheme: ScopedTheme = { colors: {}, tokens: {} };
-
 const isEmptyRecord = (record: Readonly<Record<string, unknown>>): boolean =>
   Object.keys(record).length === 0;
 
