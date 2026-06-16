@@ -1,7 +1,22 @@
 # ADR-002: Enhanced Theme Prompt Input with Suggestions
 
 ## Status
-**Accepted** (June 2025)
+**Partially adopted** — accepted June 2025; outcome recorded June 2026.
+
+The **static curated-suggestion** path (Phase 1–2 below) shipped in v1.1.0 and is
+live in v2.1.0: the Change Theme command opens a `QuickPick` of curated example
+vibes with free-form typing alongside them (`src/application/suggestions.ts`,
+`pickVibe` in `src/adapters/vscode/ui.ts`). That deliberately simple scope — no
+caching, no time/season context, a fixed list rather than per-session model calls —
+proved sufficient.
+
+The **AI-generated-suggestion** path (the originally "recommended" Option A,
+Phase 3–4) was **not pursued and is deferred indefinitely**, not planned work.
+Generating suggestions with a live model call adds latency, cost, and a failure
+mode to a cold-start nicety, which cuts against the project's KISS stance. The file
+paths named throughout this ADR (`themeGenerationService.ts`, `core/suggestionCore.ts`,
+`types/theme.ts`) predate the v2 rewrite and are historical; treat the sections below
+as the original exploration, not a current plan.
 
 ## Context
 
@@ -113,7 +128,8 @@ These examples could be surfaced during the input flow to inspire users and demo
 - ✅ Proper validation and error handling
 - ✅ Graceful cancellation support
 
-**Next Steps**: Phase 3 - Add AI-powered suggestion generation using OpenAI API
+**Phase 3–4 (AI-powered suggestion generation): deferred indefinitely.** See the
+Status section at the top — the curated list is the shipped, intentional endpoint.
 
 ---
 
