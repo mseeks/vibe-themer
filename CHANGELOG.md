@@ -185,8 +185,8 @@ imperative shell"). See `docs/ARCHITECTURE.md`.
 - Added comprehensive TypeScript types for current theme state operations (`CurrentThemeState`, `CurrentThemeResult`)
 
 ### Documentation
-- Added detailed implementation documentation in `docs/CURRENT_THEME_STATE.md`
-- Updated feature specification in `docs/THEME_ITERATION.md` with implementation progress tracking
+- Added detailed implementation documentation in `docs/CURRENT_THEME_STATE.md` (later consolidated into `docs/adrs/001-theme-iteration-feature.md`)
+- Updated feature specification in `docs/THEME_ITERATION.md` with implementation progress tracking (later consolidated into `docs/adrs/001-theme-iteration-feature.md`)
 - Enhanced Copilot instructions to reference ongoing development work and documentation structure
 
 ### Technical
