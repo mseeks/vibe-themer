@@ -18,10 +18,12 @@ generates it.
   <img src="media/demo.gif" alt="Vibe Themer streaming a theme from a described vibe" width="820" />
 </div>
 
-> **Reset, don't switch.** Generated themes are written as VS Code color overrides,
-> so they persist until you remove them. Run **"Vibe Themer: Reset Theme
-> Customizations"** to restore your original theme. Changing the theme in Settings
-> will not clear them.
+> **Reset, don't switch.** Vibe Themer doesn't create an installable theme. It writes
+> your colors as overrides in your settings (`workbench.colorCustomizations` and
+> `editor.tokenColorCustomizations`), layered on top of whatever theme you have. So
+> switching to a different theme in Settings won't clear them; they persist until you
+> remove them. Run **"Vibe Themer: Reset Theme Customizations"** to delete the overrides
+> and restore your original theme.
 
 ## Features
 
