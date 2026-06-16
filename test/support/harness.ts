@@ -19,6 +19,7 @@ import {
   type Capabilities,
   type KeepOrReset,
   type Millis,
+  type ProgressUpdate,
   type ProviderError,
   type Severity,
 } from '../../src/ports';
@@ -61,6 +62,7 @@ export interface TokenRule {
 export interface Captured {
   readonly logs: Array<{ level: string; message: string; data?: Readonly<Record<string, unknown>> }>;
   readonly notifications: Array<{ severity: Severity; title: string }>;
+  readonly progressMessages: string[];
   readonly keySetProviders: Provider[];
   keySet: boolean;
   keyCleared: boolean;
@@ -121,6 +123,7 @@ export const harness = (options: HarnessOptions = {}): Harness => {
   const captured: Captured = {
     logs: [],
     notifications: [],
+    progressMessages: [],
     keySetProviders: [],
     keySet: false,
     keyCleared: false,
@@ -257,8 +260,9 @@ export const harness = (options: HarnessOptions = {}): Harness => {
         let reports = 0;
         let cancelled = false;
         const reporter = {
-          report: () => {
+          report: (update: ProgressUpdate) => {
             reports += 1;
+            captured.progressMessages.push(update.message);
             if (options.cancelAfterReports !== undefined && reports >= options.cancelAfterReports) {
               cancelled = true;
             }

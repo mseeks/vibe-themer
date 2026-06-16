@@ -35,3 +35,12 @@ export const shouldShowMessage = (lastShownAt: OptionType<Millis>, now: Millis):
 export const markShown = (now: Millis): OptionType<Millis> => some(now);
 
 export const neverShown: OptionType<Millis> = none;
+
+/**
+ * A transient progress note for a malformed model line. Surfacing how much of the
+ * tolerance budget is spent means a later abort on "too many glitches" isn't a
+ * surprise — the user has seen it coming and can wait it out or cancel. Shown only
+ * once at least one error has occurred.
+ */
+export const recoveryMessage = (parseErrors: number, budget: number): string =>
+  `⚠️ Recovering from a glitch (${parseErrors}/${budget})`;

@@ -53,7 +53,7 @@ import {
   userMessage,
 } from '../ports';
 import { buildUserPrompt } from './context';
-import { markShown, neverShown, progressPercent, shouldShowMessage } from './progress';
+import { markShown, neverShown, progressPercent, recoveryMessage, shouldShowMessage } from './progress';
 import { type ProvisionError, provisionApiKey, renderProvisionError } from './provisionApiKey';
 import { curatedSuggestions } from './suggestions';
 
@@ -168,6 +168,14 @@ const consumeStream = async (
       parseErrors += 1;
       lastParseError = renderParseError(parsed.error);
       caps.logger.debug('directive parse failed', { line, error: lastParseError });
+      // Surface the spent malformed-line budget so an approaching abort isn't a
+      // surprise. At the threshold we abort just below, which carries its own message.
+      if (parseErrors < MAX_RECOVERABLE_ERRORS) {
+        reporter.report({
+          message: recoveryMessage(parseErrors, MAX_RECOVERABLE_ERRORS),
+          percent: some(progressPercent(applied, expected)),
+        });
+      }
     }
     if (parseErrors >= MAX_RECOVERABLE_ERRORS) {
       return { _tag: 'Aborted', applied, lastError: lastParseError };

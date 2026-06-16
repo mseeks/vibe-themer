@@ -171,6 +171,29 @@ describe('generateTheme — failures', () => {
     }
   });
 
+  it('surfaces the spent error budget in progress before it aborts', async () => {
+    // Two malformed lines (below the abort budget of 5), interleaved with valid ones:
+    // each should report a recovery message naming how much budget is spent, so the
+    // run completes but the user was warned it was burning the tolerance.
+    const text = [
+      'COUNT:3',
+      'SELECTOR:editor.background=#111111',
+      'GARBAGE:1',
+      'SELECTOR:activityBar.background=#222222',
+      'GARBAGE:2',
+      '',
+    ].join('\n');
+    const h = harness({ storedKey: VALID_KEY, vibe: 'cozy', streamText: text });
+    const result = await generateTheme(h.caps);
+
+    assert.equal(result._tag, 'Ok'); // 2 < 5, so it does not abort
+    const recovery = h.captured.progressMessages.filter((m) => m.includes('Recovering'));
+    assert.deepEqual(
+      recovery.map((m) => m.includes('1/5') || m.includes('2/5')),
+      [true, true],
+    );
+  });
+
   it('reports a write failure distinctly from malformed output', async () => {
     // Valid directives whose *writes* all fail must abort as a config/IO error,
     // not as "too many malformed lines" — they never spend the parse budget.

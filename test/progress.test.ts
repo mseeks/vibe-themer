@@ -5,6 +5,7 @@ import {
   markShown,
   neverShown,
   progressPercent,
+  recoveryMessage,
   shouldShowMessage,
 } from '../src/application/progress';
 import { coverage } from '../src/domain/coverage';
@@ -41,5 +42,12 @@ describe('coverage — relative to the estimate, not fixed thresholds', () => {
     assert.equal(coverage(90, 100), 'comprehensive');
     assert.equal(coverage(45, 50), 'comprehensive');
     assert.equal(coverage(5, 0), 'comprehensive');
+  });
+});
+
+describe('recoveryMessage', () => {
+  it('names the spent budget so an approaching abort is not a surprise', () => {
+    assert.ok(recoveryMessage(2, 5).includes('2/5'));
+    assert.ok(recoveryMessage(4, 5).includes('4/5'));
   });
 });
