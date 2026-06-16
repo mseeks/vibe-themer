@@ -13,5 +13,6 @@ import './theme.test';
 import './context.test';
 import './commandIds.test';
 import './commands.test';
+import './maintenance.test';
 import './adapters.test';
 import './generateTheme.test';

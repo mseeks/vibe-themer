@@ -44,6 +44,12 @@ export interface HarnessOptions {
   readonly currentTheme?: CurrentTheme;
   /** Make every settings write fail (simulates an unwritable settings.json). */
   readonly failApply?: boolean;
+  /** Make the theme reset fail (simulates an unwritable settings.json). */
+  readonly failReset?: boolean;
+  /** Make clearing all stored keys fail. */
+  readonly failClearKeys?: boolean;
+  /** Model returned by the picker; default none → the picker was dismissed. */
+  readonly pickedModel?: Model;
   readonly applyTo?: WriteTarget;
 }
 
@@ -173,6 +179,9 @@ export const harness = (options: HarnessOptions = {}): Harness => {
         return ok(undefined);
       },
       clearAll: async () => {
+        if (options.failClearKeys === true) {
+          return { _tag: 'Err', error: { _tag: 'StorageFailure', operation: 'clear' } };
+        }
         keys.clear();
         captured.keyCleared = true;
         return ok(undefined);
@@ -210,6 +219,9 @@ export const harness = (options: HarnessOptions = {}): Harness => {
         return ok('global');
       },
       reset: async () => {
+        if (options.failReset === true) {
+          return { _tag: 'Err', error: { _tag: 'AllTargetsFailed' } };
+        }
         captured.resets += 1;
         colors.clear();
         tokenRules.length = 0;
@@ -240,7 +252,7 @@ export const harness = (options: HarnessOptions = {}): Harness => {
         return ok(parsed._tag === 'Ok' ? some(parsed.value) : none);
       },
       promptForApiKey: async (_provider) => ok(Option.fromNullable(options.promptKey)),
-      pickModel: async () => ok(none),
+      pickModel: async () => ok(options.pickedModel !== undefined ? some(options.pickedModel) : none),
       runWithProgress: async (_title, task) => {
         let reports = 0;
         let cancelled = false;
