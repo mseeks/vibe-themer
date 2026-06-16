@@ -7,7 +7,7 @@
 
 import { generateTheme, renderGenerationError } from './application/generateTheme';
 import { clearApiKey, resetModel, resetTheme, selectModel } from './application/maintenance';
-import { type Capabilities, userMessage } from './ports';
+import { type Capabilities } from './ports';
 
 export const COMMAND_IDS = {
   changeTheme: 'vibeThemer.changeTheme',
@@ -21,20 +21,14 @@ export type CommandId = (typeof COMMAND_IDS)[keyof typeof COMMAND_IDS];
 
 const runChangeTheme = async (caps: Capabilities): Promise<void> => {
   const result = await generateTheme(caps);
+  // Only genuine failures surface a notification. Benign exits — a dismissed vibe
+  // picker (NoVibe) or key prompt (NoKey), and completed/cancelled runs that already
+  // showed their own modal — exit silently rather than nagging the user.
   if (result._tag === 'Err') {
     const message = renderGenerationError(result.error);
     if (message._tag === 'Some') {
       await caps.ui.notify(message.value, 'error');
     }
-    return;
-  }
-  if (result.value._tag === 'NoVibe') {
-    await caps.ui.notify(
-      userMessage(
-        "No theme description provided — try again when you're ready to create or modify your perfect coding atmosphere! 🎨",
-      ),
-      'info',
-    );
   }
 };
 
