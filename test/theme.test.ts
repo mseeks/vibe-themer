@@ -5,6 +5,9 @@ import {
   effectiveColors,
   effectiveScope,
   hasCustomizations,
+  parseColorMap,
+  parseScopedTheme,
+  parseTokenCustomizations,
   settingOf,
 } from '../src/domain/theme';
 import { parseLine } from '../src/protocol/streamingParser';
@@ -64,5 +67,45 @@ describe('settingOf', () => {
     assert.equal(settingOf(directive('TOKEN:comment=#123,italic'))._tag, 'Some');
     assert.equal(settingOf(directive('COUNT:5'))._tag, 'None');
     assert.equal(settingOf(directive('MESSAGE:hi'))._tag, 'None');
+  });
+});
+
+describe('parseColorMap — hand-edited config is parsed, not trusted', () => {
+  it('keeps colors and per-theme blocks but drops corrupt scalars', () => {
+    const themeBlock = { 'editor.background': '#222' };
+    assert.deepEqual(
+      parseColorMap({
+        'editor.background': '#000',
+        '[Default Dark+]': themeBlock,
+        broken: 5,
+        alsoBroken: ['#fff'],
+        nope: null,
+      }),
+      { 'editor.background': '#000', '[Default Dark+]': themeBlock },
+    );
+  });
+
+  it('degrades a non-object value to empty', () => {
+    for (const bad of ['nope', 42, null, undefined, ['#000']]) {
+      assert.deepEqual(parseColorMap(bad), {});
+    }
+  });
+});
+
+describe('parseTokenCustomizations', () => {
+  it('keeps a well-formed object whole and degrades anything else to empty', () => {
+    const value = { textMateRules: [{ scope: 'comment', settings: {} }], semanticHighlighting: true };
+    assert.deepEqual(parseTokenCustomizations(value), value);
+    assert.deepEqual(parseTokenCustomizations(42), {});
+    assert.deepEqual(parseTokenCustomizations([]), {});
+  });
+});
+
+describe('parseScopedTheme', () => {
+  it('parses colors and tokens together, dropping corrupt color entries', () => {
+    assert.deepEqual(parseScopedTheme({ a: '#1', bad: 2 }, { textMateRules: [] }), {
+      colors: { a: '#1' },
+      tokens: { textMateRules: [] },
+    });
   });
 });

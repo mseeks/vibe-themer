@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyColor, applyTokenRule, type TextMateRule } from '../src/domain/customizations';
+import { applyColor, applyTokenRule, textMateRulesOf, type TextMateRule } from '../src/domain/customizations';
 import { parseColor } from '../src/domain/color';
 import { parseSelector } from '../src/domain/selector';
 import { parseTokenScope } from '../src/domain/tokenScope';
@@ -80,5 +80,15 @@ describe('applyTokenRule', () => {
     assert.deepEqual(applyTokenRule(before, scope('string'), col('REMOVE'), none), [
       { scope: 'comment', settings: { foreground: '#000000' } },
     ]);
+  });
+});
+
+describe('textMateRulesOf', () => {
+  it('extracts the rule array, tolerating an absent or malformed key', () => {
+    const rules = [{ scope: 'comment', settings: { foreground: '#000000' } }];
+    assert.deepEqual(textMateRulesOf({ textMateRules: rules }), rules);
+    assert.deepEqual(textMateRulesOf({ semanticHighlighting: true }), []);
+    assert.deepEqual(textMateRulesOf({ textMateRules: 'oops' }), []);
+    assert.deepEqual(textMateRulesOf({}), []);
   });
 });

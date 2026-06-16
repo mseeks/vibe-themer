@@ -9,7 +9,7 @@ import { type OptionType } from '../fp';
 import { type ColorValue, toApplication } from './color';
 import { type FontStyle, fontStyleText } from './fontStyle';
 import { type WorkbenchSelector, selectorText } from './selector';
-import { type ColorMap } from './theme';
+import { type ColorMap, type TokenCustomizations } from './theme';
 import { type TokenScope, tokenScopeText } from './tokenScope';
 
 /** VS Code's `editor.tokenColorCustomizations.textMateRules` entry shape. */
@@ -17,6 +17,15 @@ export interface TextMateRule {
   readonly scope?: string | ReadonlyArray<string>;
   readonly settings?: Record<string, unknown>;
 }
+
+/**
+ * Pull the `textMateRules` array out of an existing token-customizations value,
+ * tolerating the key being absent or malformed (it degrades to an empty list).
+ */
+export const textMateRulesOf = (tokens: TokenCustomizations): ReadonlyArray<TextMateRule> => {
+  const rules = (tokens as { readonly textMateRules?: unknown }).textMateRules;
+  return Array.isArray(rules) ? (rules as ReadonlyArray<TextMateRule>) : [];
+};
 
 const scopeMatches = (ruleScope: TextMateRule['scope'], scope: string): boolean =>
   Array.isArray(ruleScope) ? ruleScope.includes(scope) : ruleScope === scope;

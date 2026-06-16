@@ -48,6 +48,47 @@ export interface CurrentTheme {
   readonly workspace: ScopedTheme;
 }
 
+// ── Parsing user-editable config ────────────────────────────────────────────────
+// VS Code config is hand-editable JSON, so a read is *parsed* into a known-good domain
+// value here rather than trusted and cast at the adapter. Corrupt input degrades to
+// empty; nothing throws and no malformed value slips through to the apply path.
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Parse a `workbench.colorCustomizations` value. Keeps color entries (strings) and VS
+ * Code's per-theme override blocks (`"[Theme]": {…}`, objects) so a round-trip write
+ * never drops them, and rejects corrupt scalars (a number, boolean, or array) that
+ * could never be a valid customization.
+ */
+export const parseColorMap = (value: unknown): ColorMap => {
+  if (!isRecord(value)) {
+    return {};
+  }
+  const out: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (typeof entry === 'string' || isRecord(entry)) {
+      out[key] = entry;
+    }
+  }
+  return out as ColorMap;
+};
+
+/**
+ * Parse an `editor.tokenColorCustomizations` value. Its entries are opaque to us
+ * (textMateRules, semanticTokenColors, …), so a well-formed object is kept whole and
+ * anything else degrades to empty.
+ */
+export const parseTokenCustomizations = (value: unknown): TokenCustomizations =>
+  isRecord(value) ? value : {};
+
+/** Read one scope's raw config values into a typed `ScopedTheme`. */
+export const parseScopedTheme = (colors: unknown, tokens: unknown): ScopedTheme => ({
+  colors: parseColorMap(colors),
+  tokens: parseTokenCustomizations(tokens),
+});
+
 const isEmptyRecord = (record: Readonly<Record<string, unknown>>): boolean =>
   Object.keys(record).length === 0;
 

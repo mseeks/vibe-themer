@@ -1,42 +1,23 @@
 import * as vscode from 'vscode';
 import { type AsyncResultType, err, type NonEmptyArray, ok } from '../../fp';
-import { applyColor, applyTokenRule, type TextMateRule } from '../../domain/customizations';
+import { applyColor, applyTokenRule, textMateRulesOf } from '../../domain/customizations';
 import { type WriteTarget } from '../../domain/scope';
 import {
-  type ColorMap,
   type CurrentTheme,
-  type ScopedTheme,
+  parseColorMap,
+  parseScopedTheme,
+  parseTokenCustomizations,
   type ThemeSetting,
-  type TokenCustomizations,
 } from '../../domain/theme';
 import { type ConfigError, type ConfigStore } from '../../ports';
 
 const COLOR_KEY = 'workbench.colorCustomizations';
 const TOKEN_KEY = 'editor.tokenColorCustomizations';
 
-interface TokenCustomizationsShape {
-  readonly textMateRules?: ReadonlyArray<TextMateRule>;
-  readonly [key: string]: unknown;
-}
-
-// VS Code config is user-editable JSON, so reads are validated, never trusted blindly.
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const asColorMap = (value: unknown): ColorMap => (isPlainObject(value) ? (value as ColorMap) : {});
-
-const asTokenShape = (value: unknown): TokenCustomizationsShape =>
-  isPlainObject(value) ? (value as TokenCustomizationsShape) : {};
-
 const targetOf = (target: WriteTarget): vscode.ConfigurationTarget =>
   target === 'global'
     ? vscode.ConfigurationTarget.Global
     : vscode.ConfigurationTarget.Workspace;
-
-const scopedTheme = (colors: unknown, tokens: unknown): ScopedTheme => ({
-  colors: asColorMap(colors),
-  tokens: isPlainObject(tokens) ? (tokens as TokenCustomizations) : {},
-});
 
 const applyToTarget = async (
   setting: ThemeSetting,
@@ -47,13 +28,17 @@ const applyToTarget = async (
     const vsTarget = targetOf(target);
 
     if (setting._tag === 'SelectorSetting') {
-      const existing = asColorMap(config.get<unknown>(COLOR_KEY));
+      const existing = parseColorMap(config.get<unknown>(COLOR_KEY));
       const next = applyColor(existing, setting.selector, setting.color);
       await config.update(COLOR_KEY, next, vsTarget);
     } else {
-      const existing = asTokenShape(config.get<unknown>(TOKEN_KEY));
-      const rules = Array.isArray(existing.textMateRules) ? existing.textMateRules : [];
-      const nextRules = applyTokenRule(rules, setting.scope, setting.color, setting.fontStyle);
+      const existing = parseTokenCustomizations(config.get<unknown>(TOKEN_KEY));
+      const nextRules = applyTokenRule(
+        textMateRulesOf(existing),
+        setting.scope,
+        setting.color,
+        setting.fontStyle,
+      );
       await config.update(TOKEN_KEY, { ...existing, textMateRules: nextRules }, vsTarget);
     }
     return ok(undefined);
@@ -68,8 +53,8 @@ export const createConfigStore = (): ConfigStore => ({
     const colors = config.inspect<unknown>(COLOR_KEY);
     const tokens = config.inspect<unknown>(TOKEN_KEY);
     return {
-      global: scopedTheme(colors?.globalValue, tokens?.globalValue),
-      workspace: scopedTheme(colors?.workspaceValue, tokens?.workspaceValue),
+      global: parseScopedTheme(colors?.globalValue, tokens?.globalValue),
+      workspace: parseScopedTheme(colors?.workspaceValue, tokens?.workspaceValue),
     };
   },
 
