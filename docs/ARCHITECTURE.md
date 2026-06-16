@@ -126,6 +126,11 @@ compile error.
 - Theme state: read per-scope via `config.inspect()` so global vs workspace are
   actually distinguished.
 
+Two design decisions behind this are written up in
+[ADR-003](adrs/003-override-model-and-error-budgets.md): why a generated theme is
+settings *overrides* rather than an installable theme file, and why the streaming
+loop carries two separate error budgets (malformed output vs settings writes).
+
 ## Testing & build
 
 - `npm run check-types` — `tsc --noEmit` at maximum strictness over `src` + `test`.
