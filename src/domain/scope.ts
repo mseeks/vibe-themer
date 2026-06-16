@@ -8,9 +8,22 @@
  * folder open, so without one we always fall through to `global`.
  */
 
-import { matchTag, type NonEmptyArray } from '../fp';
+import { none, type NonEmptyArray, type OptionType, some } from '../fp';
 
 export type WriteTarget = 'global' | 'workspace';
+
+const WRITE_TARGETS: ReadonlyArray<WriteTarget> = ['global', 'workspace'];
+
+/**
+ * Parse the user's `vibeThemer.applyTo` value. The package.json enum only constrains
+ * the Settings UI dropdown, so a hand-edited settings.json can still hold a typo;
+ * this returns `None` for an absent or invalid value so the adapter can default and
+ * log explicitly rather than silently treating "globel" as "global".
+ */
+export const parseWriteTarget = (raw: string | undefined): OptionType<WriteTarget> =>
+  raw !== undefined && (WRITE_TARGETS as ReadonlyArray<string>).includes(raw)
+    ? some(raw as WriteTarget)
+    : none;
 
 export type ConfigurationScope =
   | { readonly _tag: 'Global' }
@@ -27,14 +40,3 @@ export const writePreference = (
   }
   return hasWorkspaceFolders ? ['global', 'workspace'] : ['global'];
 };
-
-export const describeTarget = (target: WriteTarget): string =>
-  target === 'global' ? 'global settings' : 'workspace settings';
-
-export const describeScope = (scope: ConfigurationScope): string =>
-  matchTag(scope, {
-    Global: () => 'global settings',
-    Workspace: () => 'workspace settings',
-    Both: () => 'global and workspace settings',
-    None: () => 'no settings',
-  });

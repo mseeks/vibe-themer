@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode';
-import { none, type OptionType, some } from '../../fp';
-import { makeModel, type Model, modelText } from '../../domain/model';
+import { none, type OptionType } from '../../fp';
+import { type Model, modelText, parseModel } from '../../domain/model';
 import { allProviders, type Provider } from '../../domain/provider';
 import { type Preferences } from '../../ports';
 
@@ -18,7 +18,7 @@ const toModel = (stored: StoredModel | undefined): OptionType<Model> => {
   if (stored === undefined || typeof stored.id !== 'string' || !isProvider(stored.provider)) {
     return none;
   }
-  return stored.id.trim().length > 0 ? some(makeModel(stored.provider, stored.id)) : none;
+  return parseModel(stored.provider, stored.id);
 };
 
 export const createPreferences = (state: vscode.Memento): Preferences => ({

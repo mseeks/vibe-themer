@@ -3,7 +3,7 @@ import { none, ok, Option, type OptionType, some } from '../../fp';
 import { parseApiKey, renderApiKeyError } from '../../domain/apiKey';
 import { describeCoverage } from '../../domain/coverage';
 import { renderValidationError } from '../../domain/errors';
-import { makeModel, type Model, modelText, sameModel, type SupportedModel } from '../../domain/model';
+import { type Model, modelText, parseModel, sameModel, type SupportedModel } from '../../domain/model';
 import { allProviders, type Provider, providerInfo } from '../../domain/provider';
 import { parseVibe, type Vibe } from '../../domain/vibe';
 import {
@@ -63,7 +63,7 @@ const pickCustomModel = async (): Promise<OptionType<Model>> => {
   if (id === undefined || id.trim().length === 0) {
     return none;
   }
-  return some(makeModel(providerPick.provider, id.trim()));
+  return parseModel(providerPick.provider, id.trim());
 };
 
 export const createUi = (): Ui => ({

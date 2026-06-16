@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { type AsyncResultType, err, type NonEmptyArray, ok } from '../../fp';
 import { applyColor, applyTokenRule, textMateRulesOf } from '../../domain/customizations';
-import { type WriteTarget } from '../../domain/scope';
+import { parseWriteTarget, type WriteTarget } from '../../domain/scope';
 import {
   type CurrentTheme,
   parseColorMap,
@@ -9,7 +9,7 @@ import {
   parseTokenCustomizations,
   type ThemeSetting,
 } from '../../domain/theme';
-import { type ConfigError, type ConfigStore } from '../../ports';
+import { type ConfigError, type ConfigStore, type Logger } from '../../ports';
 
 const COLOR_KEY = 'workbench.colorCustomizations';
 const TOKEN_KEY = 'editor.tokenColorCustomizations';
@@ -47,7 +47,7 @@ const applyToTarget = async (
   }
 };
 
-export const createConfigStore = (): ConfigStore => ({
+export const createConfigStore = (logger: Logger): ConfigStore => ({
   readCurrentTheme: (): CurrentTheme => {
     const config = vscode.workspace.getConfiguration();
     const colors = config.inspect<unknown>(COLOR_KEY);
@@ -60,10 +60,17 @@ export const createConfigStore = (): ConfigStore => ({
 
   hasWorkspaceFolders: (): boolean => (vscode.workspace.workspaceFolders?.length ?? 0) > 0,
 
-  applyTo: (): WriteTarget =>
-    vscode.workspace.getConfiguration('vibeThemer').get<string>('applyTo') === 'workspace'
-      ? 'workspace'
-      : 'global',
+  applyTo: (): WriteTarget => {
+    const raw = vscode.workspace.getConfiguration('vibeThemer').get<string>('applyTo');
+    const parsed = parseWriteTarget(raw);
+    if (parsed._tag === 'Some') {
+      return parsed.value;
+    }
+    if (raw !== undefined && raw.trim() !== '') {
+      logger.debug('ignoring invalid vibeThemer.applyTo value; using global', { value: raw });
+    }
+    return 'global';
+  },
 
   applySetting: async (
     setting: ThemeSetting,

@@ -22,6 +22,7 @@ import { type Capabilities } from './ports';
 export function activate(context: vscode.ExtensionContext): void {
   const channel = vscode.window.createOutputChannel('Vibe Themer');
   context.subscriptions.push(channel);
+  const logger = createLogger(channel);
 
   const capabilities: Capabilities = {
     secrets: createSecretStore(context.secrets),
@@ -29,12 +30,12 @@ export function activate(context: vscode.ExtensionContext): void {
       openai: createOpenAiAdapter(),
       anthropic: createAnthropicAdapter(),
     }),
-    config: createConfigStore(),
+    config: createConfigStore(logger),
     prompts: createPromptLibrary(context),
     preferences: createPreferences(context.globalState),
     ui: createUi(),
     clock: systemClock,
-    logger: createLogger(channel),
+    logger,
   };
 
   const handlers = commandHandlers(capabilities);

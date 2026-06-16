@@ -31,6 +31,17 @@ export const parseModelId = (raw: string): OptionType<ModelId> => {
   return trimmed.length > 0 ? some(trimmed as ModelId) : none;
 };
 
+/**
+ * Smart constructor for a `Model` from untrusted input (a stored preference or a
+ * custom id typed into the picker): validates the id via `parseModelId`, returning
+ * `None` for a blank one. `makeModel` stays the thin internal cast for the curated
+ * `CATALOG` and `DEFAULT_MODEL`, whose ids are known-good literals.
+ */
+export const parseModel = (provider: Provider, id: string): OptionType<Model> => {
+  const parsed = parseModelId(id);
+  return parsed._tag === 'Some' ? some({ provider, id: parsed.value }) : none;
+};
+
 /** A curated, recommendable model with display copy for the picker. */
 export interface SupportedModel {
   readonly model: Model;

@@ -5,9 +5,17 @@ import { parseVibe } from '../src/domain/vibe';
 import { parseSelector } from '../src/domain/selector';
 import { parseTokenScope } from '../src/domain/tokenScope';
 import { parseFontStyle } from '../src/domain/fontStyle';
-import { writePreference } from '../src/domain/scope';
+import { parseWriteTarget, writePreference } from '../src/domain/scope';
 import { parseApiKey, renderApiKeyError } from '../src/domain/apiKey';
-import { CATALOG, DEFAULT_MODEL, makeModel, modelText, parseModelId, sameModel } from '../src/domain/model';
+import {
+  CATALOG,
+  DEFAULT_MODEL,
+  makeModel,
+  modelText,
+  parseModel,
+  parseModelId,
+  sameModel,
+} from '../src/domain/model';
 import { expose } from '../src/fp';
 
 describe('parseColor', () => {
@@ -65,6 +73,15 @@ describe('writePreference', () => {
     assert.deepEqual(writePreference('workspace', true), ['workspace', 'global']);
     // No folder open → workspace isn't a real target; fall through to global.
     assert.deepEqual(writePreference('workspace', false), ['global']);
+  });
+});
+
+describe('parseWriteTarget', () => {
+  it('accepts the two valid targets and rejects an absent or typo value', () => {
+    assert.deepEqual(parseWriteTarget('global'), { _tag: 'Some', value: 'global' });
+    assert.deepEqual(parseWriteTarget('workspace'), { _tag: 'Some', value: 'workspace' });
+    assert.equal(parseWriteTarget('globel')._tag, 'None');
+    assert.equal(parseWriteTarget(undefined)._tag, 'None');
   });
 });
 
@@ -136,5 +153,14 @@ describe('model & catalog', () => {
     assert.equal(parseModelId('   ')._tag, 'None');
     assert.equal(sameModel(makeModel('openai', 'x'), makeModel('openai', 'x')), true);
     assert.equal(sameModel(makeModel('openai', 'x'), makeModel('anthropic', 'x')), false);
+  });
+
+  it('parseModel builds a model from a valid id and rejects a blank one', () => {
+    const built = parseModel('anthropic', '  claude-sonnet-4-6  ');
+    assert.equal(built._tag, 'Some');
+    if (built._tag === 'Some') {
+      assert.ok(sameModel(built.value, makeModel('anthropic', 'claude-sonnet-4-6')));
+    }
+    assert.equal(parseModel('openai', '   ')._tag, 'None');
   });
 });
