@@ -2,6 +2,36 @@
 
 All notable changes to the "Vibe Themer" extension will be documented in this file.
 
+## [2.2.0] - 2026-06-16
+
+### Added
+- **Streaming recovery feedback.** When the model emits a malformed line, the progress
+  notification now shows how much of the error tolerance is spent ("Recovering from a
+  glitch — N/5"), so an approaching abort is no longer a surprise.
+
+### Changed
+- **Quieter benign exits.** Dismissing the vibe picker now exits silently instead of
+  showing a "no description provided" notification, matching the silent key-prompt path.
+- **Hardened settings boundary.** Reads of `workbench.colorCustomizations` /
+  `editor.tokenColorCustomizations`, the `applyTo` setting, and model selection are now
+  parsed into validated domain values via smart constructors. A corrupt, hand-edited
+  `settings.json` degrades cleanly (and an invalid `applyTo` is logged) instead of
+  slipping through to apply time.
+
+### Security
+- Bump esbuild to 0.28.1.
+
+### Documentation
+- Clarified in the README that a generated theme is settings overrides, not an
+  installable theme file (so switching themes won't clear it; Reset removes it).
+- Added [ADR-003](docs/adrs/003-override-model-and-error-budgets.md) documenting the
+  override model and the streaming error-budget design; recorded ADR-002's outcome and
+  removed its stale tracking file; fixed stale CHANGELOG cross-references.
+
+### Internal
+- Added test coverage for the maintenance commands (reset theme, clear keys,
+  select/reset model); removed dead code; dependency and CI housekeeping.
+
 ## [2.1.0] - 2026-06-06
 
 ### Added
